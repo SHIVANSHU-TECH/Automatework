@@ -1,0 +1,19 @@
+services:
+  # Express API
+  - type: web
+    name: automatework-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npm run build:api
+    startCommand: npm run start:api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: GROQ_API_KEY
+        sync: false
+      - key: APP_AUTH_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

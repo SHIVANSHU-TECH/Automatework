@@ -1,5 +1,5 @@
 services:
-  # Express API
+  # ─── Express API (deploy this on Render) ────────────────────────────────────
   - type: web
     name: automatework-api
     runtime: node
@@ -17,3 +17,17 @@ services:
         sync: false
       - key: NEXT_PUBLIC_API_URL
         sync: false
+
+  # ─── Next.js Frontend (deploy this on Vercel, NOT Render) ───────────────────
+  # If you must deploy the web app on Render, use these settings:
+  # - type: web
+  #   name: automatework-web
+  #   runtime: node
+  #   rootDir: .
+  #   buildCommand: npm install && npm run build:web
+  #   startCommand: npm run start --workspace=apps/web
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: NEXT_PUBLIC_API_URL
+  #       sync: false

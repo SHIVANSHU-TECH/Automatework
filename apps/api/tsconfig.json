@@ -11,7 +11,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
-    "baseUrl": ".",
+    "rootDir": "src",
+    "baseUrl": "src",
     "types": ["node"],
     "paths": {
       "@shared": ["../../packages/shared/src/index.ts"],
@@ -20,10 +21,6 @@
       "@domain/*": ["../../packages/domain/src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "../../packages/shared/src/**/*.ts",
-    "../../packages/domain/src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

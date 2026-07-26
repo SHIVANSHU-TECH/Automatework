@@ -99,12 +99,15 @@ function BulletList({ items, max = 6 }: { items: string[]; max?: number }) {
 export default function WebsiteAnalyzerPage() {
   const router = useRouter();
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const [url, setUrl] = useState(searchParams?.get('url') ?? '');
-  const [savedClientId, setSavedClientId] = useState<string | null>(searchParams?.get('clientId') ?? null);
-  const [clientName, setClientName] = useState('');
-  const [showSaveForm, setShowSaveForm] = useState(false);
 
-  // Create proposal state
+  const [url, setUrl]                   = useState(searchParams?.get('url') ?? '');
+  const [result, setResult]             = useState<AnalysisResult | null>(null);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState<string | null>(null);
+  const [saving, setSaving]             = useState(false);
+  const [savedClientId, setSavedClientId] = useState<string | null>(searchParams?.get('clientId') ?? null);
+  const [clientName, setClientName]     = useState('');
+  const [showSaveForm, setShowSaveForm] = useState(false);
   const [creatingProposal, setCreatingProposal] = useState(false);
 
   const handleAnalyze = async () => {

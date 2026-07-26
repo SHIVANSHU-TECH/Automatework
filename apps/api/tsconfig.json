@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2021"],
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "types": ["node"],
+    "paths": {
+      "@shared": ["../../packages/shared/src/index.ts"],
+      "@shared/*": ["../../packages/shared/src/*"],
+      "@domain": ["../../packages/domain/src/index.ts"],
+      "@domain/*": ["../../packages/domain/src/*"]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/types/**/*.d.ts",
+    "../../packages/shared/src/**/*.ts",
+    "../../packages/domain/src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

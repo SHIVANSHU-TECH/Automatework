@@ -1,0 +1,34 @@
+{
+  "name": "ai-proposal-generator",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "build": "npm run build --workspace=apps/web && npm run build --workspace=apps/api",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "lint": "eslint . --ext .ts,.tsx,.js",
+    "test": "npm run test --workspace apps/api && npm run test --workspace apps/web",
+    "test:e2e": "playwright test",
+    "start": "npm run start --workspace apps/api & npm run start --workspace apps/web"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "15.3.3",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "playwright": "^1.46.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.7.0"
+  }
+}

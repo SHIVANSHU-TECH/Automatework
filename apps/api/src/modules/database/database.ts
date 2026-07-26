@@ -1,18 +1,21 @@
 import { initializeApp, getApps } from 'firebase/app';
 import {
-  getDatabase,
-  ref,
-  set,
-  get,
-  update,
-  remove,
+  getFirestore,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
   query,
-  orderByChild,
-  equalTo,
-  type DatabaseReference,
-} from 'firebase/database';
+  where,
+  orderBy,
+  type Firestore,
+} from 'firebase/firestore';
 
-// Firebase configuration
+// ─── Firebase config ──────────────────────────────────────────────────────────
+
 const firebaseConfig = {
   apiKey: 'AIzaSyDYJdbz01UYSz3MNKG9G04UtQDkgWMWCYk',
   authDomain: 'trainerform-52f85.firebaseapp.com',
@@ -23,93 +26,120 @@ const firebaseConfig = {
   appId: '1:226297252007:web:85ec7514b492547c373382',
 };
 
-// Initialise only once (safe for hot-reload in dev)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getDatabase(app);
+const db: Firestore = getFirestore(app);
 
-// ─── Generic helpers ───────────────────────────────────────────────────────────
+// ─── Timeout wrapper ──────────────────────────────────────────────────────────
 
-/** Write a value at an exact path, overwriting whatever is there. */
-export const dbSet = async (path: string, value: unknown): Promise<void> => {
-  await Promise.race([
-    set(ref(db, path), value),
+const withTimeout = <T>(promise: Promise<T>, ms = 10000): Promise<T> =>
+  Promise.race([
+    promise,
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Firebase request timed out. Check your database is active.')), 8000)
+      setTimeout(
+        () => reject(new Error(`Firestore request timed out after ${ms}ms. Check your Firebase project at console.firebase.google.com`)),
+        ms
+      )
     ),
   ]);
-};
 
-/** Read a single node. Returns null when the node does not exist. */
-export const dbGet = async <T>(path: string): Promise<T | null> => {
-  const snapshot = await Promise.race([
-    get(ref(db, path)),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Firebase request timed out. Check your database is active.')), 8000)
-    ),
-  ]);
-  return snapshot.exists() ? (snapshot.val() as T) : null;
-};
+// ─── Generic helpers ──────────────────────────────────────────────────────────
 
-/** Read all children of a node as an array. */
-export const dbGetAll = async <T>(path: string): Promise<T[]> => {
-  const snapshot = await Promise.race([
-    get(ref(db, path)),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Firebase request timed out. Check your database is active.')), 8000)
-    ),
-  ]);
-  if (!snapshot.exists()) return [];
-  const val = snapshot.val() as Record<string, T>;
-  return Object.values(val);
-};
-
-/** Update specific fields of a node without overwriting siblings. */
-export const dbUpdate = async (path: string, value: Record<string, unknown>): Promise<void> => {
-  await update(ref(db, path), value);
-};
-
-/** Delete a node. */
-export const dbRemove = async (path: string): Promise<void> => {
-  await remove(ref(db, path));
+/**
+ * Write (upsert) a document at collection/id.
+ * path format: "collectionName/documentId"
+ */
+export const dbSet = async (path: string, value: Record<string, unknown>): Promise<void> => {
+  const [col, ...rest] = path.split('/');
+  const id = rest.join('/');
+  await withTimeout(setDoc(doc(db, col, id), value));
 };
 
 /**
- * Query children of a node where `childKey === value`.
- * Returns matching children as an array.
+ * Read a single document. Returns null when not found.
+ * path format: "collectionName/documentId"
  */
-export const dbQueryByChild = async <T>(
-  path: string,
-  childKey: string,
-  value: string | number | boolean
-): Promise<T[]> => {
-  const nodeRef: DatabaseReference = ref(db, path);
-  const q = query(nodeRef, orderByChild(childKey), equalTo(value));
-  const snapshot = await get(q);
-  if (!snapshot.exists()) return [];
-  const val = snapshot.val() as Record<string, T>;
-  return Object.values(val);
+export const dbGet = async <T>(path: string): Promise<T | null> => {
+  const [col, ...rest] = path.split('/');
+  const id = rest.join('/');
+  const snap = await withTimeout(getDoc(doc(db, col, id)));
+  return snap.exists() ? (snap.data() as T) : null;
 };
 
-// ─── Convenience path builders ────────────────────────────────────────────────
+/**
+ * Read all documents in a collection as an array.
+ * path format: "collectionName"
+ */
+export const dbGetAll = async <T>(path: string): Promise<T[]> => {
+  const snap = await withTimeout(getDocs(collection(db, path)));
+  return snap.docs.map((d) => d.data() as T);
+};
+
+/**
+ * Update specific fields of a document without overwriting other fields.
+ * path format: "collectionName/documentId"
+ */
+export const dbUpdate = async (path: string, value: Record<string, unknown>): Promise<void> => {
+  const [col, ...rest] = path.split('/');
+  const id = rest.join('/');
+  await withTimeout(updateDoc(doc(db, col, id), value));
+};
+
+/**
+ * Delete a document.
+ * path format: "collectionName/documentId"
+ */
+export const dbRemove = async (path: string): Promise<void> => {
+  const [col, ...rest] = path.split('/');
+  const id = rest.join('/');
+  await withTimeout(deleteDoc(doc(db, col, id)));
+};
+
+/**
+ * Query documents in a collection where field === value.
+ */
+export const dbQueryByField = async <T>(
+  collectionName: string,
+  field: string,
+  value: string | number | boolean
+): Promise<T[]> => {
+  const q = query(collection(db, collectionName), where(field, '==', value));
+  const snap = await withTimeout(getDocs(q));
+  return snap.docs.map((d) => d.data() as T);
+};
+
+/**
+ * Query with ordering.
+ */
+export const dbGetAllOrdered = async <T>(
+  collectionName: string,
+  orderField: string,
+  direction: 'asc' | 'desc' = 'desc'
+): Promise<T[]> => {
+  const q = query(collection(db, collectionName), orderBy(orderField, direction));
+  const snap = await withTimeout(getDocs(q));
+  return snap.docs.map((d) => d.data() as T);
+};
+
+// ─── Path builders (same API as before) ──────────────────────────────────────
 
 export const paths = {
-  user: (userId: string) => `users/${userId}`,
-  userByEmail: () => 'users',
+  user:      (userId: string)       => `users/${userId}`,
+  userByEmail: ()                   => 'users',
 
-  client: (clientId: string) => `clients/${clientId}`,
-  clients: () => 'clients',
+  client:    (clientId: string)     => `clients/${clientId}`,
+  clients:   ()                     => 'clients',
 
-  analysis: (analysisId: string) => `website_analyses/${analysisId}`,
-  analyses: () => 'website_analyses',
+  analysis:  (analysisId: string)   => `website_analyses/${analysisId}`,
+  analyses:  ()                     => 'website_analyses',
 
-  proposal: (proposalId: string) => `proposals/${proposalId}`,
-  proposals: () => 'proposals',
+  proposal:  (proposalId: string)   => `proposals/${proposalId}`,
+  proposals: ()                     => 'proposals',
 
-  aiAnalysis: (aiAnalysisId: string) => `ai_analyses/${aiAnalysisId}`,
-  aiAnalyses: () => 'ai_analyses',
+  aiAnalysis:(aiAnalysisId: string) => `ai_analyses/${aiAnalysisId}`,
+  aiAnalyses:()                     => 'ai_analyses',
 
-  auditLog: (logId: string) => `audit_logs/${logId}`,
-  auditLogs: () => 'audit_logs',
+  auditLog:  (logId: string)        => `audit_logs/${logId}`,
+  auditLogs: ()                     => 'audit_logs',
 };
 
 export { db };

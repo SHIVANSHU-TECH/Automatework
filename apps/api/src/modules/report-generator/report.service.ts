@@ -8,7 +8,23 @@ export type GenerateReportRequest = {
   format: string;
 };
 
-// ─── HTML template ────────────────────────────────────────────────────────────
+// ─── HTML ─────────────────────────────────────────────────────────────────────
+
+function esc(s: string | undefined): string {
+  return (s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br/>');
+}
+
+function htmlSection(title: string, content: string | undefined): string {
+  if (!content?.trim()) return '';
+  return `<section>
+    <h2>${title}</h2>
+    <p>${esc(content)}</p>
+  </section>`;
+}
 
 const renderHtml = (p: Proposal): string => `<!DOCTYPE html>
 <html lang="en">
@@ -19,35 +35,32 @@ const renderHtml = (p: Proposal): string => `<!DOCTYPE html>
     @page { margin: 2cm; }
     body { font-family: Georgia, serif; color: #111827; line-height: 1.7; max-width: 800px; margin: 0 auto; padding: 32px; }
     h1 { font-size: 2rem; color: #1e3a5f; border-bottom: 3px solid #1e3a5f; padding-bottom: 12px; }
-    h2 { font-size: 1.15rem; color: #1e3a5f; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-top: 28px; }
+    h2 { font-size: 1.1rem; color: #1e3a5f; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-top: 28px; }
     .meta { color: #6b7280; font-size: 0.9rem; margin-bottom: 24px; }
     section { margin-bottom: 20px; }
-    pre { white-space: pre-wrap; font-family: inherit; }
     p { margin: 0 0 8px; }
   </style>
 </head>
 <body>
   <h1>${p.title}</h1>
   <div class="meta">Status: <strong>${p.status}</strong> &nbsp;|&nbsp; Version: ${p.version}</div>
-  ${section('Executive Summary', p.executiveSummary)}
-  ${section('Scope of Work', p.scope)}
-  ${section('Timeline', p.timeline)}
-  ${section('Deliverables', p.deliverables)}
-  ${section('Pricing', p.pricing)}
-  ${section('Maintenance Plan', p.maintenancePlan)}
-  ${section('Why Choose Us', p.whyChooseUs)}
-  ${section('Case Studies', p.caseStudies)}
-  ${section('Terms & Conditions', p.terms)}
+  ${htmlSection('Executive Summary',  p.executiveSummary)}
+  ${htmlSection('Scope of Work',      p.scope)}
+  ${htmlSection('Timeline',           p.timeline)}
+  ${htmlSection('Deliverables',       p.deliverables)}
+  ${htmlSection('Pricing',            p.pricing)}
+  ${htmlSection('Maintenance Plan',   p.maintenancePlan)}
+  ${htmlSection('Why Choose Us',      p.whyChooseUs)}
+  ${htmlSection('Case Studies',       p.caseStudies)}
+  ${htmlSection('Terms & Conditions', p.terms)}
 </body>
 </html>`;
 
-function section(title: string, content: string | undefined): string {
-  if (!content?.trim()) return '';
-  const safe = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return `<section><h2>${title}</h2><p>${safe.replace(/\n/g, '<br/>')}</p></section>`;
-}
-
 // ─── Markdown ─────────────────────────────────────────────────────────────────
+
+function mdSection(title: string, content: string | undefined): string {
+  return content?.trim() ? `## ${title}\n\n${content}` : '';
+}
 
 const renderMarkdown = (p: Proposal): string => [
   `# ${p.title}`,
@@ -63,50 +76,42 @@ const renderMarkdown = (p: Proposal): string => [
   mdSection('Terms & Conditions', p.terms),
 ].filter(Boolean).join('\n\n');
 
-function mdSection(title: string, content: string | undefined): string {
-  return content?.trim() ? `## ${title}\n\n${content}` : '';
-}
-
 // ─── DOCX ─────────────────────────────────────────────────────────────────────
 
 const renderDocx = async (p: Proposal): Promise<Buffer> => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { Document, Packer, Paragraph, HeadingLevel } = require('docx') as {
-    Document: new (o: Record<string, unknown>) => unknown;
-    Packer: { toBuffer: (d: unknown) => Promise<Buffer> };
-    Paragraph: new (o: Record<string, unknown>) => unknown;
-    HeadingLevel: Record<string, string>;
+  const docx = require('docx');
+  const { Document, Packer, Paragraph, HeadingLevel } = docx;
+
+  const paras = (content: string | undefined): unknown[] => {
+    if (!content?.trim()) return [];
+    return content.split('\n').filter(Boolean).map((line: string) => new Paragraph({ text: line }));
   };
 
-  const para = (text: string, heading?: string) =>
-    heading
-      ? new Paragraph({ text, heading })
-      : new Paragraph({ text });
-
-  const docxSection = (title: string, content: string | undefined) => {
+  const makeSection = (title: string, content: string | undefined): unknown[] => {
     if (!content?.trim()) return [];
     return [
-      para(title, HeadingLevel.HEADING_2),
-      ...content.split('\n').filter(Boolean).map((line) => para(line)),
-      para(''),
+      new Paragraph({ text: title, heading: HeadingLevel.HEADING_2 }),
+      ...paras(content),
+      new Paragraph({ text: '' }),
     ];
   };
 
   const doc = new Document({
     sections: [{
       children: [
-        para(p.title, HeadingLevel.HEADING_1),
-        para(`Status: ${p.status}   |   Version: ${p.version}`),
-        para(''),
-        ...docxSection('Executive Summary',  p.executiveSummary),
-        ...docxSection('Scope of Work',      p.scope),
-        ...docxSection('Timeline',           p.timeline),
-        ...docxSection('Deliverables',       p.deliverables),
-        ...docxSection('Pricing',            p.pricing),
-        ...docxSection('Maintenance Plan',   p.maintenancePlan),
-        ...docxSection('Why Choose Us',      p.whyChooseUs),
-        ...docxSection('Case Studies',       p.caseStudies),
-        ...docxSection('Terms & Conditions', p.terms),
+        new Paragraph({ text: p.title,  heading: HeadingLevel.HEADING_1 }),
+        new Paragraph({ text: `Status: ${p.status}   |   Version: ${p.version}` }),
+        new Paragraph({ text: '' }),
+        ...makeSection('Executive Summary',  p.executiveSummary),
+        ...makeSection('Scope of Work',      p.scope),
+        ...makeSection('Timeline',           p.timeline),
+        ...makeSection('Deliverables',       p.deliverables),
+        ...makeSection('Pricing',            p.pricing),
+        ...makeSection('Maintenance Plan',   p.maintenancePlan),
+        ...makeSection('Why Choose Us',      p.whyChooseUs),
+        ...makeSection('Case Studies',       p.caseStudies),
+        ...makeSection('Terms & Conditions', p.terms),
       ],
     }],
   });
@@ -114,68 +119,56 @@ const renderDocx = async (p: Proposal): Promise<Buffer> => {
   return Packer.toBuffer(doc);
 };
 
-// ─── PDF via pdfkit (pure Node, no browser) ───────────────────────────────────
+// ─── PDF via pdfkit ───────────────────────────────────────────────────────────
 
-const renderPdf = async (p: Proposal): Promise<Buffer> => {
+const renderPdf = (p: Proposal): Promise<Buffer> => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const PDFDocument = require('pdfkit') as new (opts?: Record<string, unknown>) => {
-    fontSize: (n: number) => unknown;
-    font: (f: string) => unknown;
-    fillColor: (c: string) => unknown;
-    text: (t: string, opts?: Record<string, unknown>) => unknown;
-    moveDown: (n?: number) => unknown;
-    on: (e: string, cb: (...a: unknown[]) => void) => void;
-    end: () => void;
-    pipe: (s: unknown) => void;
-  };
+  const PDFDocument = require('pdfkit');
 
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 60, size: 'A4' });
-    const chunks: Buffer[] = [];
+  return new Promise<Buffer>((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 72, size: 'A4' });
+      const chunks: Buffer[] = [];
 
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
+      doc.on('data',  (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end',   () => resolve(Buffer.concat(chunks)));
+      doc.on('error', (err: Error) => reject(err));
 
-    const heading1 = (text: string) => {
-      doc.fontSize(22).fillColor('#1e3a5f').font('Helvetica-Bold').text(text);
-      doc.moveDown(0.5);
-    };
+      // Title
+      doc.font('Helvetica-Bold').fontSize(24).fillColor('#1e3a5f').text(p.title);
+      doc.moveDown(0.4);
+      doc.font('Helvetica').fontSize(10).fillColor('#6b7280')
+         .text(`Status: ${p.status}   |   Version: ${p.version}   |   ${new Date(p.updatedAt ?? Date.now()).toLocaleDateString()}`);
+      doc.moveDown(0.6);
+      doc.moveTo(72, doc.y).lineTo(doc.page.width - 72, doc.y).strokeColor('#e5e7eb').lineWidth(1).stroke();
+      doc.moveDown(0.8);
 
-    const heading2 = (text: string) => {
-      doc.moveDown(0.8).fontSize(13).fillColor('#1e3a5f').font('Helvetica-Bold').text(text);
-      doc.moveDown(0.3);
-    };
+      const pdfSection = (title: string, content: string | undefined) => {
+        if (!content?.trim()) return;
+        doc.font('Helvetica-Bold').fontSize(13).fillColor('#1e3a5f').text(title);
+        doc.moveDown(0.25);
+        doc.font('Helvetica').fontSize(10).fillColor('#374151').text(content.trim(), { lineGap: 3 });
+        doc.moveDown(0.8);
+      };
 
-    const body = (text: string) => {
-      doc.fontSize(11).fillColor('#111827').font('Helvetica').text(text, { lineGap: 4 });
-    };
+      pdfSection('Executive Summary',  p.executiveSummary);
+      pdfSection('Scope of Work',      p.scope);
+      pdfSection('Timeline',           p.timeline);
+      pdfSection('Deliverables',       p.deliverables);
+      pdfSection('Pricing',            p.pricing);
+      pdfSection('Maintenance Plan',   p.maintenancePlan);
+      pdfSection('Why Choose Us',      p.whyChooseUs);
+      pdfSection('Case Studies',       p.caseStudies);
+      pdfSection('Terms & Conditions', p.terms);
 
-    const pdfSection = (title: string, content: string | undefined) => {
-      if (!content?.trim()) return;
-      heading2(title);
-      body(content);
-    };
-
-    heading1(p.title);
-    body(`Status: ${p.status}   |   Version: ${p.version}`);
-    doc.moveDown();
-
-    pdfSection('Executive Summary',  p.executiveSummary);
-    pdfSection('Scope of Work',      p.scope);
-    pdfSection('Timeline',           p.timeline);
-    pdfSection('Deliverables',       p.deliverables);
-    pdfSection('Pricing',            p.pricing);
-    pdfSection('Maintenance Plan',   p.maintenancePlan);
-    pdfSection('Why Choose Us',      p.whyChooseUs);
-    pdfSection('Case Studies',       p.caseStudies);
-    pdfSection('Terms & Conditions', p.terms);
-
-    doc.end();
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
   });
 };
 
-// ─── Stream to response (no disk writes, no broken URLs) ─────────────────────
+// ─── Stream to response ───────────────────────────────────────────────────────
 
 export const streamReport = async (
   request: GenerateReportRequest,
@@ -184,46 +177,43 @@ export const streamReport = async (
   const proposal = await getProposalById(request.proposalId);
   if (!proposal) throw new Error('Proposal not found');
 
-  const slug = proposal.title.replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 40);
-  const filename = `${slug}-proposal.${request.format === 'markdown' ? 'md' : request.format}`;
+  const slug = proposal.title.replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 50);
+  const ext  = request.format === 'markdown' ? 'md' : request.format;
+  const filename = `${slug}-proposal.${ext}`;
 
   switch (request.format as ExportFormat) {
     case 'html': {
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(renderHtml(proposal));
-      break;
+      return;
     }
-
     case 'markdown': {
       res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(renderMarkdown(proposal));
-      break;
+      return;
     }
-
     case 'pdf': {
       const buffer = await renderPdf(proposal);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Length', buffer.length);
-      res.send(buffer);
-      break;
+      res.setHeader('Content-Length', String(buffer.length));
+      res.end(buffer);
+      return;
     }
-
     case 'docx': {
       const buffer = await renderDocx(proposal);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Length', buffer.length);
-      res.send(buffer);
-      break;
+      res.setHeader('Content-Length', String(buffer.length));
+      res.end(buffer);
+      return;
     }
-
     default:
       throw new Error(`Unsupported format: ${request.format}`);
   }
 };
 
-// Keep old export name for any remaining callers
+// Alias for backward compatibility
 export const generateReport = streamReport;

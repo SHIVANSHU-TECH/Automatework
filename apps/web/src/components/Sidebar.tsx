@@ -1,58 +1,127 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { getEmail, clearToken } from '../lib/auth';
 
 const nav = [
-  { href: '/',                  label: 'Home',             icon: '🏠' },
-  { href: '/dashboard',         label: 'Dashboard',        icon: '📊' },
-  { href: '/website-analyzer',  label: 'Website Analyzer', icon: '🔍' },
-  { href: '/proposals',         label: 'Proposals',        icon: '📄' },
-  { href: '/crm',               label: 'CRM',              icon: '👥' },
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/website-analyzer',
+    label: 'Website Analyzer',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <circle cx="11" cy="11" r="8"/><path strokeLinecap="round" d="M21 21l-4.35-4.35"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/proposals',
+    label: 'Proposals',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/crm',
+    label: 'Clients',
+    icon: (
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" d="M17 20h5v-2a4 4 0 00-4-4h-1M9 20H4v-2a4 4 0 014-4h1m4-4a4 4 0 100-8 4 4 0 000 8zm6 4a3 3 0 100-6 3 3 0 000 6zM3 16a3 3 0 100-6 3 3 0 000 6z"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router   = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => { setEmail(getEmail()); }, []);
+
+  const handleLogout = () => {
+    clearToken();
+    router.replace('/login');
+  };
+
+  // Don't show sidebar on login page
+  if (pathname === '/login') return null;
+
+  const initials = email ? email.slice(0, 2).toUpperCase() : '??';
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-slate-200 bg-white shadow-sm">
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col bg-slate-900 text-white">
+
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold">
-          AI
+      <div className="flex h-14 items-center gap-2.5 px-5 border-b border-slate-800">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500 shrink-0">
+          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-900 leading-tight">Proposal</p>
-          <p className="text-xs text-slate-400 leading-tight">Generator</p>
+          <p className="text-sm font-bold text-white leading-tight">ProposalWorks</p>
+          <p className="text-[10px] text-slate-500 leading-tight">Business Intelligence</p>
         </div>
       </div>
 
-      {/* Nav links */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-0.5">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 px-3 pt-2 pb-1">
+          Navigation
+        </p>
         {nav.map(({ href, label, icon }) => {
-          const active = pathname === href;
+          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
                 active
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-base">{icon}</span>
+              <span className={active ? 'text-white' : 'text-slate-500'}>{icon}</span>
               {label}
-              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-600" />}
             </Link>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-slate-100 p-4">
-        <p className="text-xs text-slate-400">AI Proposal Generator</p>
-        <p className="text-xs text-slate-300">v0.1.0</p>
+      {/* User + Logout */}
+      <div className="border-t border-slate-800 p-3 space-y-1">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-slate-200 truncate">{email ?? 'Loading…'}</p>
+            <p className="text-[10px] text-slate-500">Your workspace</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          Sign Out
+        </button>
       </div>
     </aside>
   );

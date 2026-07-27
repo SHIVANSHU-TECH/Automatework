@@ -6,6 +6,7 @@ import type { Proposal } from '@domain';
 export type GenerateReportRequest = {
   proposalId: string;
   format: string;
+  proposal?: import('@domain').Proposal;
 };
 
 // ─── HTML ─────────────────────────────────────────────────────────────────────
@@ -174,7 +175,7 @@ export const streamReport = async (
   request: GenerateReportRequest,
   res: Response
 ): Promise<void> => {
-  const proposal = await getProposalById(request.proposalId);
+  const proposal = request.proposal ?? await getProposalById(request.proposalId);
   if (!proposal) throw new Error('Proposal not found');
 
   const slug = proposal.title.replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 50);

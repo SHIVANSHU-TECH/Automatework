@@ -17,7 +17,7 @@ export const analyzeWebsite = async (request: WebsiteAnalyzerRequest): Promise<W
   const analysisId = uuidv4();
 
   // Persist to Firebase when a clientId is provided
-  if (request.clientId) {
+  if (request.clientId && request.userId) {
     const record = {
       analysisId,
       clientId: request.clientId,
@@ -50,7 +50,7 @@ export const analyzeWebsite = async (request: WebsiteAnalyzerRequest): Promise<W
       updatedAt: now,
     };
 
-    await dbSet(paths.analysis(analysisId), record);
+    await dbSet(paths.analysis(request.userId, analysisId), record);
   }
 
   return analysis;

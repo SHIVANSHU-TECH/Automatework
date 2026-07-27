@@ -1,44 +1,75 @@
 import { Router } from 'express';
-import { createProposal, getProposalById, listProposals, updateProposal } from '../modules/proposal-generator/proposal.service';
+import { requireAuth, type AuthRequest } from '../modules/auth/middleware';
+import { dbSet, dbGet, dbGetAll, paths } from '../modules/database/database';
+import { v4 as uuidv4 } from 'uuid';
+import type { Proposal } from '@domain';
 
 export const proposalRouter = Router();
+proposalRouter.use(requireAuth);
 
-proposalRouter.get('/', async (_req, res) => {
+proposalRouter.get('/', async (req: AuthRequest, res) => {
   try {
-    const proposals = await listProposals();
-    res.json({ proposals });
+    const all = await dbGetAll<Proposal>(paths.proposals(req.userId!));
+    const sorted = all.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    res.json({ proposals: sorted });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message || 'Unable to load proposals' });
   }
 });
 
-proposalRouter.get('/:id', async (req, res) => {
+proposalRouter.get('/:id', async (req: AuthRequest, res) => {
   try {
-    const proposal = await getProposalById(req.params.id);
-
-    if (!proposal) {
-      return res.status(404).json({ message: 'Proposal not found' });
-    }
-
+    const proposal = await dbGet<Proposal>(paths.proposal(req.userId!, req.params.id));
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found' });
     res.json({ proposal });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message || 'Unable to load proposal' });
   }
 });
 
-proposalRouter.post('/', async (req, res) => {
+proposalRouter.post('/', async (req: AuthRequest, res) => {
   try {
-    const proposal = await createProposal(req.body);
+    const now = new Date().toISOString();
+    const proposalId = uuidv4();
+    const proposal: Proposal = {
+      proposalId,
+      clientId: req.body.clientId ?? 'unknown',
+      title: req.body.title ?? 'Untitled',
+      status: req.body.status ?? 'draft',
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: req.body.submittedAt,
+      version: req.body.version ?? 1,
+      executiveSummary: req.body.executiveSummary ?? '',
+      scope: req.body.scope ?? '',
+      timeline: req.body.timeline ?? '',
+      deliverables: req.body.deliverables ?? '',
+      pricing: req.body.pricing ?? '',
+      maintenancePlan: req.body.maintenancePlan ?? '',
+      whyChooseUs: req.body.whyChooseUs ?? '',
+      caseStudies: req.body.caseStudies ?? '',
+      terms: req.body.terms ?? '',
+      signature: req.body.signature ?? '',
+      metadata: { ...req.body.metadata, userId: req.userId },
+    };
+    await dbSet(paths.proposal(req.userId!, proposalId), proposal);
     res.status(201).json({ proposal });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message || 'Unable to create proposal' });
   }
 });
 
-proposalRouter.put('/:id', async (req, res) => {
+proposalRouter.put('/:id', async (req: AuthRequest, res) => {
   try {
-    const proposal = await updateProposal(req.params.id, req.body);
-    res.json({ proposal });
+    const existing = await dbGet<Proposal>(paths.proposal(req.userId!, req.params.id));
+    if (!existing) return res.status(404).json({ message: 'Proposal not found' });
+    const updated: Proposal = {
+      ...existing, ...req.body,
+      proposalId: existing.proposalId,
+      updatedAt: new Date().toISOString(),
+    };
+    await dbSet(paths.proposal(req.userId!, req.params.id), updated);
+    res.json({ proposal: updated });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message || 'Unable to update proposal' });
   }

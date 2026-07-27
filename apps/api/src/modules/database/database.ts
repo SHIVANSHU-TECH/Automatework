@@ -120,26 +120,24 @@ export const dbGetAllOrdered = async <T>(
   return snap.docs.map((d) => d.data() as T);
 };
 
-// ─── Path builders (same API as before) ──────────────────────────────────────
+// ─── Path builders (user-scoped for data isolation) ──────────────────────────
 
 export const paths = {
   user:      (userId: string)       => `users/${userId}`,
   userByEmail: ()                   => 'users',
 
-  client:    (clientId: string)     => `clients/${clientId}`,
-  clients:   ()                     => 'clients',
+  // All data is scoped under the user's ID — Client A sees only their data
+  client:    (userId: string, clientId: string)     => `user_data/${userId}/clients/${clientId}`,
+  clients:   (userId: string)                       => `user_data/${userId}/clients`,
 
-  analysis:  (analysisId: string)   => `website_analyses/${analysisId}`,
-  analyses:  ()                     => 'website_analyses',
+  analysis:  (userId: string, analysisId: string)   => `user_data/${userId}/website_analyses/${analysisId}`,
+  analyses:  (userId: string)                       => `user_data/${userId}/website_analyses`,
 
-  proposal:  (proposalId: string)   => `proposals/${proposalId}`,
-  proposals: ()                     => 'proposals',
+  proposal:  (userId: string, proposalId: string)   => `user_data/${userId}/proposals/${proposalId}`,
+  proposals: (userId: string)                       => `user_data/${userId}/proposals`,
 
-  aiAnalysis:(aiAnalysisId: string) => `ai_analyses/${aiAnalysisId}`,
-  aiAnalyses:()                     => 'ai_analyses',
-
-  auditLog:  (logId: string)        => `audit_logs/${logId}`,
-  auditLogs: ()                     => 'audit_logs',
+  aiAnalysis:(userId: string, aiAnalysisId: string) => `user_data/${userId}/ai_analyses/${aiAnalysisId}`,
+  aiAnalyses:(userId: string)                       => `user_data/${userId}/ai_analyses`,
 };
 
 export { db };

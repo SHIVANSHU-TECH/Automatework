@@ -1,6 +1,7 @@
 export type WebsiteAnalyzerRequest = {
   websiteUrl: string;
   clientId?: string;
+  userId?: string;
   crawlDepth?: number;
 };
 

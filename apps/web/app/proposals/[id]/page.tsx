@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchJson, apiUrl } from '../../../src/lib/api';
+import { getToken } from '../../../src/lib/auth';
 
 interface Proposal {
   proposalId: string;
@@ -22,6 +23,12 @@ interface Proposal {
   caseStudies: string;
   terms: string;
   metadata?: Record<string, unknown>;
+}
+
+interface ShortUrlResult {
+  shortUrl: string;
+  qrCode?: string;
+  shortId: string;
 }
 
 const statusColor: Record<string, string> = {
@@ -83,6 +90,13 @@ export default function ProposalDetailPage() {
   const [error, setError]             = useState<string | null>(null);
   const [saved, setSaved]             = useState(false);
   const [exportOpen, setExportOpen]   = useState(false);
+
+  // V2 integrations
+  const [shareUrl, setShareUrl]           = useState<ShortUrlResult | null>(null);
+  const [generatingShare, setGeneratingShare] = useState(false);
+  const [copiedShare, setCopiedShare]     = useState(false);
+  const [generatingLinkedIn, setGeneratingLinkedIn] = useState(false);
+  const [linkedInPostId, setLinkedInPostId] = useState<string | null>(null);
 
   const [title, setTitle]               = useState('');
   const [executiveSummary, setExec]     = useState('');
@@ -172,7 +186,7 @@ export default function ProposalDetailPage() {
     try {
       const res = await fetch(`${apiUrl}/api/reports/export`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ proposalId: id, format }),
       });
       if (!res.ok) {
@@ -192,6 +206,48 @@ export default function ProposalDetailPage() {
       setError((err as Error).message);
     } finally {
       setExporting(null);
+    }
+  };
+
+  // V2: Generate shareable short URL for this proposal
+  const handleGenerateShareableLink = async () => {
+    if (!proposal) return;
+    setGeneratingShare(true); setError(null);
+    try {
+      const sourceUrl = (proposal.metadata?.sourceUrl as string | undefined) ?? '';
+      const longUrl = sourceUrl.startsWith('http') ? sourceUrl : `${apiUrl}/proposals/${id}`;
+      const data = await fetchJson<{ shortUrl: { shortUrl: string; qrCode?: string; shortId: string } }>('/api/urls', {
+        method: 'POST',
+        body: JSON.stringify({
+          originalUrl: longUrl,
+          alias: `proposal-${id.slice(0, 6)}`,
+          proposalId: id,
+        }),
+      });
+      setShareUrl({ shortUrl: data.shortUrl.shortUrl, qrCode: data.shortUrl.qrCode, shortId: data.shortUrl.shortId });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGeneratingShare(false);
+    }
+  };
+
+  // V2: Generate LinkedIn post from this proposal
+  const handleGenerateLinkedIn = async (postType: string) => {
+    if (!proposal) return;
+    setGeneratingLinkedIn(true); setError(null);
+    try {
+      const data = await fetchJson<{ post: { postId: string } }>('/api/linkedin/from-proposal', {
+        method: 'POST',
+        body: JSON.stringify({ proposalId: id, postType }),
+      });
+      // Save it automatically
+      await fetchJson('/api/linkedin/save', { method: 'POST', body: JSON.stringify(data.post) });
+      setLinkedInPostId(data.post.postId);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGeneratingLinkedIn(false);
     }
   };
 
@@ -352,6 +408,93 @@ export default function ProposalDetailPage() {
           <button onClick={handleSave} disabled={saving} className="btn-primary px-6 py-2.5">
             {saving ? 'Saving…' : '💾 Save Proposal'}
           </button>
+        </div>
+
+        {/* ─── V2: Shareable Link ──────────────────────────────────────── */}
+        <div className="card border-indigo-100 bg-indigo-50 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <p className="text-sm font-semibold text-indigo-900">🔗 Shareable Link</p>
+              <p className="text-xs text-indigo-600 mt-0.5">Create a short URL + QR code to share this proposal</p>
+            </div>
+            {!shareUrl && (
+              <button onClick={handleGenerateShareableLink} disabled={generatingShare} className="btn-primary text-xs px-4 py-2">
+                {generatingShare ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                    </svg>Generating…
+                  </span>
+                ) : '+ Generate Link'}
+              </button>
+            )}
+          </div>
+
+          {shareUrl && (
+            <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a href={shareUrl.shortUrl} target="_blank" rel="noopener noreferrer"
+                    className="font-mono text-sm text-blue-700 hover:underline break-all">{shareUrl.shortUrl}</a>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(shareUrl.shortUrl); setCopiedShare(true); setTimeout(() => setCopiedShare(false), 2000); }}
+                    className="btn-secondary text-xs px-2 py-1 shrink-0">
+                    {copiedShare ? '✓ Copied' : '📋 Copy'}
+                  </button>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <span className="badge text-xs bg-green-100 text-green-700">✓ Short URL created</span>
+                  <button onClick={() => router.push('/url-shortener')} className="text-xs text-blue-600 hover:underline">View analytics →</button>
+                  <button onClick={() => setShareUrl(null)} className="text-xs text-slate-400 hover:text-slate-600">Reset</button>
+                </div>
+              </div>
+              {shareUrl.qrCode && (
+                <div className="flex flex-col items-center gap-1">
+                  <img src={shareUrl.qrCode} alt="QR" className="w-20 h-20 rounded-lg border border-indigo-200" />
+                  <a href={shareUrl.qrCode} download="qr.png" className="text-[10px] text-indigo-500 hover:underline">⬇ QR</a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ─── V2: LinkedIn Content ────────────────────────────────────── */}
+        <div className="card border-blue-100 bg-blue-50 space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-blue-900">LinkedIn Content</p>
+            <p className="text-xs text-blue-600 mt-0.5">Auto-generate a LinkedIn post from this proposal</p>
+          </div>
+
+          {linkedInPostId ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="badge text-xs bg-green-100 text-green-700">✓ Post generated & saved</span>
+              <button onClick={() => router.push('/linkedin-generator')} className="btn-primary text-xs px-3 py-1.5">
+                View in LinkedIn Generator →
+              </button>
+              <button onClick={() => setLinkedInPostId(null)} className="text-xs text-slate-400 hover:text-slate-600">Generate another</button>
+            </div>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {['Case Study', 'Project Showcase', 'Client Win'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => handleGenerateLinkedIn(type)}
+                  disabled={generatingLinkedIn}
+                  className="btn-secondary text-xs px-3 py-2 border-blue-200 hover:border-blue-400"
+                >
+                  {generatingLinkedIn ? (
+                    <span className="flex items-center gap-1.5">
+                      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>…
+                    </span>
+                  ) : `✏️ ${type}`}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

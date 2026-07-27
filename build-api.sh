@@ -44,7 +44,7 @@ cat > apps/api/tsconfig.build.json << 'TSEOF'
 }
 TSEOF
 
-echo "==> Compiling TypeScript..."
+echo "==> Compiling TypeScript (V1 + V2 controllers)..."
 npx tsc -p apps/api/tsconfig.build.json
 
 echo "==> Cleaning up temp package copies..."
@@ -54,8 +54,17 @@ rm -f  apps/api/tsconfig.build.json
 echo "==> Verifying output..."
 if [ ! -f "apps/api/dist/index.js" ]; then
   echo "ERROR: apps/api/dist/index.js not found!"
-  find apps/api/dist -name "*.js" | head -20
+  find apps/api/dist -name "*.js" 2>/dev/null | head -20
   exit 1
 fi
 
-echo "==> SUCCESS: dist/index.js exists at $(pwd)/apps/api/dist/index.js"
+echo "==> Verifying V2 controllers..."
+for ctrl in lead-finder linkedin-generator url-shortener; do
+  if [ -f "apps/api/dist/controllers/${ctrl}.controller.js" ]; then
+    echo "  ok ${ctrl}.controller.js"
+  else
+    echo "  MISSING ${ctrl}.controller.js"
+  fi
+done
+
+echo "==> SUCCESS"

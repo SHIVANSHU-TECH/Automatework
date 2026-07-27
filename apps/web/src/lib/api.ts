@@ -17,7 +17,6 @@ export const fetchJson = async <T>(path: string, options?: RequestInit): Promise
   const response = await fetch(`${apiUrl}${path}`, { ...options, headers });
 
   if (response.status === 401) {
-    // Token expired — redirect to login
     if (typeof window !== 'undefined') window.location.href = '/login';
     throw new Error('Session expired. Please log in again.');
   }
@@ -28,4 +27,16 @@ export const fetchJson = async <T>(path: string, options?: RequestInit): Promise
   }
 
   return response.json();
+};
+
+/** Exchange a Firebase ID token for our app JWT */
+export const exchangeFirebaseToken = async (idToken: string): Promise<{ token: string; email: string }> => {
+  const res = await fetch(`${apiUrl}/api/auth/firebase`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? 'Auth exchange failed');
+  return { token: data.token, email: data.email };
 };

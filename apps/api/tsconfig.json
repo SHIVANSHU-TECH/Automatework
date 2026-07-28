@@ -3,7 +3,9 @@
     "target": "ES2021",
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "lib": ["ES2021"],
+    "lib": [
+      "ES2021"
+    ],
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -13,14 +15,29 @@
     "outDir": "dist",
     "rootDir": "src",
     "baseUrl": "src",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "paths": {
-      "@shared": ["../../packages/shared/src/index.ts"],
-      "@shared/*": ["../../packages/shared/src/*"],
-      "@domain": ["../../packages/domain/src/index.ts"],
-      "@domain/*": ["../../packages/domain/src/*"]
+      "@shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@shared/*": [
+        "../../packages/shared/src/*"
+      ],
+      "@domain": [
+        "../../packages/domain/src/index.ts"
+      ],
+      "@domain/*": [
+        "../../packages/domain/src/*"
+      ]
     }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -92,24 +92,22 @@ export default function Sidebar() {
   const initials = email ? email.slice(0, 2).toUpperCase() : '??';
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col bg-slate-900 text-white">
+    <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col bg-navy text-white border-r border-customBorder/5">
 
       {/* Logo */}
-      <div className="flex h-14 items-center gap-2.5 px-5 border-b border-slate-800">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500 shrink-0">
-          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-          </svg>
+      <div className="flex h-14 items-center gap-2.5 px-5 border-b border-customBorder/5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 shrink-0 p-1.5">
+          <img src="/favicon.png" className="w-full h-full object-contain" alt="Automate Work Favicon" />
         </div>
         <div>
-          <p className="text-sm font-bold text-white leading-tight">ProposalWorks</p>
-          <p className="text-[10px] text-slate-500 leading-tight">Business Intelligence</p>
+          <p className="text-sm font-bold text-white leading-tight">Automate Work</p>
+          <p className="text-[10px] text-textsecondary leading-tight">AI Proposal Engine</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 px-3 pt-2 pb-1">
+      <nav className="flex-1 p-3 space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-textsecondary px-3 pt-2 pb-1">
           Navigation
         </p>
         {nav.map(({ href, label, icon }) => {
@@ -118,10 +116,10 @@ export default function Sidebar() {
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                 active
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-brandblue text-white shadow-sm'
+                  : 'text-slate-400 hover:bg-navy-dark/40 hover:text-white'
               }`}
             >
               <span className={active ? 'text-white' : 'text-slate-500'}>{icon}</span>
@@ -132,19 +130,19 @@ export default function Sidebar() {
       </nav>
 
       {/* User + Logout */}
-      <div className="border-t border-slate-800 p-3 space-y-1">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+      <div className="border-t border-customBorder/5 p-3 space-y-1">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-navy-dark/40 border border-white/5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-brandblue text-xs font-bold text-white">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-slate-200 truncate">{email ?? 'Loading…'}</p>
-            <p className="text-[10px] text-slate-500">Your workspace</p>
+            <p className="text-[10px] text-textsecondary">Your workspace</p>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-400 hover:bg-navy-dark/40 hover:text-white transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

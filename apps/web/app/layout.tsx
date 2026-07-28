@@ -5,14 +5,15 @@ import MainContent from '../src/components/MainContent';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'ProposalWorks',
+  title: 'Automate Work',
   description: 'Website analysis and proposal generation platform.',
+  icons: '/favicon.png',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-slate-100">
+      <body className="bg-background font-sans antialiased text-navy">
         <AuthGuard>
           <Sidebar />
           <MainContent>{children}</MainContent>

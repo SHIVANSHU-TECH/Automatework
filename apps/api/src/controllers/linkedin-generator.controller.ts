@@ -91,7 +91,7 @@ Return a JSON object with exactly these fields:
 
 Return ONLY the JSON object.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama3-8b-8192' });
+    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
 
     let parsed: Partial<LinkedInPost> = {};
     try {
@@ -157,7 +157,7 @@ ${context}
 Return a JSON object with: headline, hook, body, ctaText, hashtags (5 items), imageSuggestions (3 items), carouselSuggestions (3 items), commentStrategy, bestPostingTime.
 Return ONLY the JSON.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama3-8b-8192' });
+    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
     let parsed: Partial<LinkedInPost> = {};
     try {
       const jsonMatch = aiResult.raw.match(/\{[\s\S]*\}/);

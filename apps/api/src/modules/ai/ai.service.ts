@@ -28,7 +28,7 @@ export const generateAiAnalysis = async (request: AiRequest): Promise<AiResponse
   const client = getClient();
 
   const completion = await client.chat.completions.create({
-    model: request.model ?? 'llama3-8b-8192',
+    model: request.model ?? 'llama-3.1-8b-instant',
     messages: [{ role: 'user', content: request.prompt }],
   });
 

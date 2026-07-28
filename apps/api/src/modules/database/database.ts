@@ -42,6 +42,23 @@ const withTimeout = <T>(promise: Promise<T>, ms = 10000): Promise<T> =>
     ),
   ]);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const removeUndefined = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined);
+  }
+  const cleaned: Record<string, any> = {};
+  for (const key of Object.keys(obj)) {
+    if (obj[key] !== undefined) {
+      cleaned[key] = removeUndefined(obj[key]);
+    }
+  }
+  return cleaned;
+};
+
 // ─── Generic helpers ──────────────────────────────────────────────────────────
 
 /** Write (upsert) a document at collection/id.
@@ -54,7 +71,7 @@ export const dbSet = async (path: string, value: unknown): Promise<void> => {
   // Cast to any — Firestore accepts any plain object; TypeScript's DocumentData
   // requires an index signature which our typed interfaces don't have.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await withTimeout(setDoc(doc(db, col, id), value as any));
+  await withTimeout(setDoc(doc(db, col, id), removeUndefined(value)));
 };
 
 /**
@@ -84,7 +101,7 @@ export const dbGetAll = async <T>(path: string): Promise<T[]> => {
 export const dbUpdate = async (path: string, value: Record<string, unknown>): Promise<void> => {
   const [col, ...rest] = path.split('/');
   const id = rest.join('/');
-  await withTimeout(updateDoc(doc(db, col, id), value));
+  await withTimeout(updateDoc(doc(db, col, id), removeUndefined(value)));
 };
 
 /**

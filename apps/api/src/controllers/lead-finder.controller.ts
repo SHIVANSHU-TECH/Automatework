@@ -85,7 +85,7 @@ For each lead, provide a JSON array with objects containing:
 
 Return ONLY the JSON array, no other text.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama3-8b-8192' });
+    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
 
     let leadsData: Array<Partial<Lead>> = [];
     try {

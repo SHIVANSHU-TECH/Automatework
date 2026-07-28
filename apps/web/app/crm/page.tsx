@@ -164,10 +164,14 @@ export default function CrmPage() {
 
             {clients.length === 0 && !loadError ? (
               <div className="card flex flex-col items-center py-12 text-center">
-                <span className="text-4xl mb-3">👥</span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-400 mb-3 border border-customBorder">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
                 <p className="text-sm font-medium text-slate-600">No clients yet</p>
                 <p className="text-xs text-slate-400 mt-1">Add a client or analyze a website to get started.</p>
-                <Link href="/website-analyzer" className="mt-4 btn-primary text-xs px-4 py-2">🔍 Analyze a Website</Link>
+                <Link href="/website-analyzer" className="mt-4 btn-primary text-xs px-4 py-2">Analyze a Website</Link>
               </div>
             ) : (
               <div className="space-y-3">
@@ -202,14 +206,14 @@ export default function CrmPage() {
                         href={`/website-analyzer?url=${encodeURIComponent(c.websiteUrl)}&clientId=${c.clientId}`}
                         className="btn-secondary text-xs px-3 py-1.5"
                       >
-                        🔍 Analyze Website
+                        Analyze Website
                       </Link>
                       <button
                         onClick={() => handleCreateProposal(c)}
                         disabled={creatingProposal === c.clientId}
                         className="btn-primary text-xs px-3 py-1.5"
                       >
-                        {creatingProposal === c.clientId ? 'Creating…' : '📄 Create Proposal'}
+                        {creatingProposal === c.clientId ? 'Creating…' : 'Create Proposal'}
                       </button>
                     </div>
                   </div>

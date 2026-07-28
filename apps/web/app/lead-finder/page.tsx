@@ -52,6 +52,8 @@ export default function LeadFinderPage() {
   const [saving, setSaving]       = useState<string | null>(null);
   const [error, setError]         = useState<string | null>(null);
   const [message, setMessage]     = useState<string | null>(null);
+  const [filterPriority, setFilterPriority] = useState<string>('');
+  const [filterHasContact, setFilterHasContact] = useState<boolean>(false);
 
   const loadSaved = async () => {
     try {
@@ -64,7 +66,7 @@ export default function LeadFinderPage() {
 
   const handleSearch = async () => {
     if (!industry && !keywords && !city && !country) { setError('Enter at least one search criterion'); return; }
-    setSearching(true); setError(null); setResults([]);
+    setSearching(true); setError(null); setResults([]); setSelected(new Set());
     try {
       const data = await fetchJson<{ leads: Lead[] }>('/api/leads/search', {
         method: 'POST',
@@ -97,13 +99,38 @@ export default function LeadFinderPage() {
     finally { setSaving(null); }
   };
 
+  const currentList = tab === 'search' ? results : saved;
+  const filteredList = currentList.filter((lead) => {
+    if (filterPriority && lead.priorityScore !== Number(filterPriority)) return false;
+    if (filterHasContact && !lead.email && !lead.phone) return false;
+    return true;
+  });
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = filteredList.map((l) => l.leadId);
+      setSelected(new Set(allIds));
+    } else {
+      setSelected(new Set());
+    }
+  };
+
   const handleExport = async (format: 'csv' | 'json') => {
     const token = getToken();
-    const ids = Array.from(selected);
+    const exportLeads = selected.size
+      ? currentList.filter((l) => selected.has(l.leadId))
+      : filteredList;
+
+    if (exportLeads.length === 0) {
+      setError('No leads to export.');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
     const res = await fetch(`${apiUrl}/api/leads/export`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ format, leadIds: ids.length ? ids : undefined }),
+      body: JSON.stringify({ format, leads: exportLeads }),
     });
     const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
@@ -137,9 +164,9 @@ export default function LeadFinderPage() {
           </div>
           <div className="flex gap-2">
             {['search','saved'].map((t) => (
-              <button key={t} onClick={() => setTab(t as 'search'|'saved')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === t ? 'bg-blue-600 text-white' : 'btn-secondary'}`}>
-                {t === 'search' ? '🔍 Search' : `💾 Saved (${saved.length})`}
+              <button key={t} onClick={() => { setTab(t as 'search'|'saved'); setSelected(new Set()); }}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === t ? 'bg-brandblue text-white' : 'btn-secondary'}`}>
+                {t === 'search' ? 'Search' : `Saved (${saved.length})`}
               </button>
             ))}
           </div>
@@ -190,27 +217,64 @@ export default function LeadFinderPage() {
               <button onClick={handleSearch} disabled={searching} className="btn-primary">
                 {searching ? (
                   <span className="flex items-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>Searching…
                   </span>
-                ) : '🔍 Find Leads'}
+                ) : 'Find Leads'}
               </button>
             </div>
 
             {/* Results */}
-            {results.length > 0 && (
+            {currentList.length > 0 && (
               <div>
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                  <p className="section-label">{results.length} Leads Found</p>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleExport('csv')} className="btn-secondary text-xs px-3 py-1.5">⬇ CSV</button>
-                    <button onClick={() => handleExport('json')} className="btn-secondary text-xs px-3 py-1.5">⬇ JSON</button>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-customBorder pb-3">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={filteredList.length > 0 && selected.size === filteredList.length}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-slate-300 text-brandblue focus:ring-brandblue"
+                      />
+                      Select All
+                    </label>
+                    <div className="h-4 w-px bg-customBorder hidden sm:block" />
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-textsecondary">Filters:</span>
+                      <select
+                        value={filterPriority}
+                        onChange={(e) => setFilterPriority(e.target.value)}
+                        className="rounded-lg border border-customBorder bg-white px-2.5 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-brandblue"
+                      >
+                        <option value="">Any Priority</option>
+                        <option value="5">P5 Only</option>
+                        <option value="4">P4 Only</option>
+                        <option value="3">P3 Only</option>
+                        <option value="2">P2 Only</option>
+                        <option value="1">P1 Only</option>
+                      </select>
+                      <label className="flex items-center gap-1.5 cursor-pointer text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={filterHasContact}
+                          onChange={(e) => setFilterHasContact(e.target.checked)}
+                          className="rounded border-slate-300 text-brandblue focus:ring-brandblue"
+                        />
+                        Has Contact Details
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-textsecondary mr-2">{selected.size} of {filteredList.length} selected</span>
+                    <button onClick={() => handleExport('csv')} className="btn-secondary text-xs px-3 py-1.5">Export CSV</button>
+                    <button onClick={() => handleExport('json')} className="btn-secondary text-xs px-3 py-1.5">Export JSON</button>
                   </div>
                 </div>
+
                 <div className="space-y-3">
-                  {results.map((lead) => (
+                  {filteredList.map((lead) => (
                     <div key={lead.leadId} className="card space-y-3">
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="min-w-0 flex-1">
@@ -229,10 +293,21 @@ export default function LeadFinderPage() {
                         </div>
                       </div>
                       {(lead.email || lead.phone || lead.linkedinUrl) && (
-                        <div className="flex gap-3 flex-wrap text-xs text-slate-600">
-                          {lead.email     && <span>✉ {lead.email}</span>}
-                          {lead.phone     && <span>📞 {lead.phone}</span>}
-                          {lead.linkedinUrl && <a href={lead.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">LinkedIn</a>}
+                        <div className="flex gap-4 flex-wrap text-xs text-slate-500">
+                          {lead.email     && <span>Email: <span className="text-slate-800 font-medium">{lead.email}</span></span>}
+                          {lead.phone     && (
+                            <span>Phone: <a href={`tel:${lead.phone.replace(/[^0-9+]/g, '')}`} className="text-brandblue hover:underline font-medium">{lead.phone}</a></span>
+                          )}
+                          {lead.linkedinUrl && (
+                            <a
+                              href={/^https?:\/\//i.test(lead.linkedinUrl.trim()) ? lead.linkedinUrl.trim() : `https://${lead.linkedinUrl.trim().replace(/^\/+/, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brandblue hover:underline font-medium"
+                            >
+                              LinkedIn
+                            </a>
+                          )}
                         </div>
                       )}
                       {lead.potentialServices.length > 0 && (
@@ -245,12 +320,12 @@ export default function LeadFinderPage() {
                       <p className="text-xs text-slate-500 italic">{lead.outreachStrategy}</p>
                       <div className="flex gap-2 pt-1 border-t border-slate-100 flex-wrap">
                         <button onClick={() => handleSaveLead(lead)} disabled={saving === lead.leadId} className="btn-secondary text-xs px-3 py-1.5">
-                          {saving === lead.leadId ? 'Saving…' : '💾 Save Lead'}
+                          {saving === lead.leadId ? 'Saving…' : 'Save Lead'}
                         </button>
                         <button onClick={() => handleSaveToCrm(lead)} disabled={saving === lead.leadId + '-crm'} className="btn-primary text-xs px-3 py-1.5">
-                          {saving === lead.leadId + '-crm' ? 'Adding…' : '👥 Add to CRM'}
+                          {saving === lead.leadId + '-crm' ? 'Adding…' : 'Add to CRM'}
                         </button>
-                        <button onClick={() => router.push('/proposals')} className="btn-secondary text-xs px-3 py-1.5">📄 Create Proposal</button>
+                        <button onClick={() => router.push('/proposals')} className="btn-secondary text-xs px-3 py-1.5">Create Proposal</button>
                       </div>
                     </div>
                   ))}
@@ -264,42 +339,87 @@ export default function LeadFinderPage() {
           <div>
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <p className="section-label">Saved Leads ({saved.length})</p>
-              {saved.length > 0 && (
-                <div className="flex gap-2">
-                  <button onClick={() => handleExport('csv')} className="btn-secondary text-xs px-3 py-1.5">⬇ CSV</button>
-                  <button onClick={() => handleExport('json')} className="btn-secondary text-xs px-3 py-1.5">⬇ JSON</button>
-                </div>
-              )}
             </div>
             {saved.length === 0 ? (
               <div className="card flex flex-col items-center py-12 text-center">
-                <span className="text-4xl mb-3">📋</span>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-400 mb-3 border border-customBorder">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                </div>
                 <p className="text-sm font-medium text-slate-600">No saved leads yet</p>
                 <p className="text-xs text-slate-400 mt-1">Search and save leads to see them here.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {saved.map((lead) => (
-                  <div key={lead.leadId} className="card flex items-center justify-between gap-4 flex-wrap">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-slate-900">{lead.companyName}</p>
-                        <span className={`badge text-xs ${priorityBadge(lead.priorityScore)}`}>P{lead.priorityScore}</span>
-                        {lead.savedTocrm && <span className="badge text-xs bg-green-100 text-green-700">In CRM</span>}
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{lead.location} · {lead.businessCategory}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`badge text-xs font-bold ${scoreColor(lead.aiLeadScore)}`}>{lead.aiLeadScore}</span>
-                      {!lead.savedTocrm && (
-                        <button onClick={() => handleSaveToCrm(lead)} disabled={saving === lead.leadId + '-crm'} className="btn-primary text-xs px-3 py-1.5">
-                          {saving === lead.leadId + '-crm' ? '…' : '→ CRM'}
-                        </button>
-                      )}
-                      <button onClick={() => handleDelete(lead.leadId)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1.5">✕</button>
+              <div>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-customBorder pb-3">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={filteredList.length > 0 && selected.size === filteredList.length}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-slate-300 text-brandblue focus:ring-brandblue"
+                      />
+                      Select All
+                    </label>
+                    <div className="h-4 w-px bg-customBorder hidden sm:block" />
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-textsecondary">Filters:</span>
+                      <select
+                        value={filterPriority}
+                        onChange={(e) => setFilterPriority(e.target.value)}
+                        className="rounded-lg border border-customBorder bg-white px-2.5 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-brandblue"
+                      >
+                        <option value="">Any Priority</option>
+                        <option value="5">P5 Only</option>
+                        <option value="4">P4 Only</option>
+                        <option value="3">P3 Only</option>
+                        <option value="2">P2 Only</option>
+                        <option value="1">P1 Only</option>
+                      </select>
+                      <label className="flex items-center gap-1.5 cursor-pointer text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={filterHasContact}
+                          onChange={(e) => setFilterHasContact(e.target.checked)}
+                          className="rounded border-slate-300 text-brandblue focus:ring-brandblue"
+                        />
+                        Has Contact Details
+                      </label>
                     </div>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-textsecondary mr-2">{selected.size} of {filteredList.length} selected</span>
+                    <button onClick={() => handleExport('csv')} className="btn-secondary text-xs px-3 py-1.5">Export CSV</button>
+                    <button onClick={() => handleExport('json')} className="btn-secondary text-xs px-3 py-1.5">Export JSON</button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {filteredList.map((lead) => (
+                    <div key={lead.leadId} className="card flex items-center justify-between gap-4 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input type="checkbox" checked={selected.has(lead.leadId)} onChange={() => toggleSelect(lead.leadId)} className="rounded" />
+                          <p className="text-sm font-semibold text-slate-900">{lead.companyName}</p>
+                          <span className={`badge text-xs ${priorityBadge(lead.priorityScore)}`}>P{lead.priorityScore}</span>
+                          {lead.savedTocrm && <span className="badge text-xs bg-green-100 text-green-700">In CRM</span>}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">{lead.location} · {lead.businessCategory}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`badge text-xs font-bold ${scoreColor(lead.aiLeadScore)}`}>{lead.aiLeadScore}</span>
+                        {!lead.savedTocrm && (
+                          <button onClick={() => handleSaveToCrm(lead)} disabled={saving === lead.leadId + '-crm'} className="btn-primary text-xs px-3 py-1.5">
+                            {saving === lead.leadId + '-crm' ? '…' : 'CRM'}
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(lead.leadId)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1.5">✕</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

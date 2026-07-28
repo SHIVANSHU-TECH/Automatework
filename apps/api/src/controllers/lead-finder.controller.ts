@@ -238,11 +238,17 @@ leadFinderRouter.post('/:id/save-to-crm', async (req: AuthRequest, res) => {
 
 leadFinderRouter.post('/export', async (req: AuthRequest, res) => {
   try {
-    const { format = 'csv', leadIds } = req.body as { format: string; leadIds?: string[] };
-    const allLeads = await dbGetAll<Lead>(`user_data/${req.userId}/leads`);
-    const leads = leadIds?.length
-      ? allLeads.filter((l) => leadIds.includes(l.leadId))
-      : allLeads;
+    const { format = 'csv', leadIds, leads: clientLeads } = req.body as { format: string; leadIds?: string[]; leads?: Lead[] };
+    
+    let leads: Lead[];
+    if (clientLeads && Array.isArray(clientLeads)) {
+      leads = clientLeads;
+    } else {
+      const allLeads = await dbGetAll<Lead>(`user_data/${req.userId}/leads`);
+      leads = leadIds?.length
+        ? allLeads.filter((l) => leadIds.includes(l.leadId))
+        : allLeads;
+    }
 
     const filename = `leads-${Date.now()}.${format}`;
 

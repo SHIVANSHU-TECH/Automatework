@@ -44,14 +44,17 @@ const withTimeout = <T>(promise: Promise<T>, ms = 10000): Promise<T> =>
 
 // ─── Generic helpers ──────────────────────────────────────────────────────────
 
-/**
- * Write (upsert) a document at collection/id.
+/** Write (upsert) a document at collection/id.
  * path format: "collectionName/documentId"
  */
-export const dbSet = async (path: string, value: Record<string, unknown>): Promise<void> => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const dbSet = async (path: string, value: unknown): Promise<void> => {
   const [col, ...rest] = path.split('/');
   const id = rest.join('/');
-  await withTimeout(setDoc(doc(db, col, id), value));
+  // Cast to any — Firestore accepts any plain object; TypeScript's DocumentData
+  // requires an index signature which our typed interfaces don't have.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await withTimeout(setDoc(doc(db, col, id), value as any));
 };
 
 /**

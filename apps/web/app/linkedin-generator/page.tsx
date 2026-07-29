@@ -138,8 +138,8 @@ export default function LinkedInGeneratorPage() {
     const full = `${editHeadline}\n\n${editHook}\n\n${editBody}\n\n${editCta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
     // For LinkedIn, we copy to clipboard first because they don't support pre-filling text via intent URL
     navigator.clipboard.writeText(full);
-    window.open('https://www.linkedin.com/feed/', '_blank');
-    setMessage('Copied to clipboard! Paste it directly into LinkedIn.');
+    window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
+    setMessage('Copied to clipboard! The post window will open automatically, just paste (Ctrl+V) your text.');
     setTimeout(() => setMessage(null), 3000);
     setPosting(false);
   };

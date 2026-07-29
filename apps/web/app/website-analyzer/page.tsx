@@ -192,7 +192,7 @@ export default function WebsiteAnalyzerPage() {
   };
 
   return (
-    <main className="p-6">
+    <main className="p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="page-header">
           <h1 className="text-2xl font-bold text-slate-900">Website Analyzer</h1>

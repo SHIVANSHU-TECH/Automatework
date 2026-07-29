@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import Sidebar from '../src/components/Sidebar';
 import AuthGuard from '../src/components/AuthGuard';
-import MainContent from '../src/components/MainContent';
+import AppLayout from '../src/components/AppLayout';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
@@ -15,8 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-background font-sans antialiased text-navy">
         <AuthGuard>
-          <Sidebar />
-          <MainContent>{children}</MainContent>
+          <AppLayout>{children}</AppLayout>
         </AuthGuard>
       </body>
     </html>

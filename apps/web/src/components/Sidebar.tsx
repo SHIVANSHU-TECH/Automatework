@@ -74,7 +74,7 @@ const nav = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void }) {
   const pathname = usePathname();
   const router   = useRouter();
   const [email, setEmail] = useState<string | null>(null);
@@ -92,10 +92,19 @@ export default function Sidebar() {
   const initials = email ? email.slice(0, 2).toUpperCase() : '??';
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-56 flex-col bg-navy text-white border-r border-customBorder/5">
+    <aside className={`fixed inset-y-0 left-0 z-40 flex w-56 flex-col bg-navy text-white border-r border-customBorder/5 transition-transform duration-300 md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      
+      {/* Mobile close button (optional, handled by backdrop, but good for accessibility) */}
+      <div className="md:hidden flex justify-end p-2 border-b border-customBorder/5">
+        <button onClick={() => setIsOpen && setIsOpen(false)} className="p-2 text-slate-300 hover:text-white">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
       {/* Logo */}
-      <div className="flex h-14 items-center gap-2.5 px-5 border-b border-customBorder/5">
+      <div className="hidden md:flex h-14 items-center gap-2.5 px-5 border-b border-customBorder/5">
         <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 shrink-0 p-1.5">
           <img src="/favicon.png" className="w-full h-full object-contain" alt="Automate Work Favicon" />
         </div>
@@ -106,7 +115,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-textsecondary px-3 pt-2 pb-1">
           Navigation
         </p>
@@ -116,6 +125,7 @@ export default function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={() => setIsOpen && setIsOpen(false)}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                 active
                   ? 'bg-brandblue text-white shadow-sm'
@@ -130,7 +140,7 @@ export default function Sidebar() {
       </nav>
 
       {/* User + Logout */}
-      <div className="border-t border-customBorder/5 p-3 space-y-1">
+      <div className="border-t border-customBorder/5 p-3 space-y-1 shrink-0">
         <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-navy-dark/40 border border-white/5">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-brandblue text-xs font-bold text-white">
             {initials}
@@ -145,7 +155,7 @@ export default function Sidebar() {
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-400 hover:bg-navy-dark/40 hover:text-white transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
           </svg>
           Sign Out
         </button>

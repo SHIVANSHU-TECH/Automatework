@@ -269,7 +269,7 @@ export default function ProposalDetailPage() {
 
   if (error && !proposal) {
     return (
-      <main className="p-8">
+      <main className="p-4 md:p-8">
         <div className="card border-red-200 bg-red-50 text-red-700 text-sm max-w-xl">
           <p className="font-semibold">Could not load proposal</p>
           <p className="mt-1 text-xs">{error}</p>
@@ -287,7 +287,7 @@ export default function ProposalDetailPage() {
   const clientName = proposal.metadata?.clientName as string | undefined;
 
   return (
-    <main className="p-8">
+    <main className="p-4 md:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
 
         {/* ─── Header ─────────────────────────────────────────────────── */}

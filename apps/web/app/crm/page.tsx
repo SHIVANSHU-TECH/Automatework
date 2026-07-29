@@ -99,7 +99,7 @@ export default function CrmPage() {
   const categories = ['Professional Services', 'Healthcare', 'E-commerce', 'SaaS', 'Finance', 'Education', 'Real Estate'];
 
   return (
-    <main className="p-8">
+    <main className="p-4 md:p-8">
       <div className="mx-auto max-w-6xl space-y-8">
 
         <div className="page-header">

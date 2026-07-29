@@ -134,7 +134,7 @@ export default function LinkedInGeneratorPage() {
     : '';
 
   return (
-    <main className="p-8">
+    <main className="p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-6">
 
         <div className="page-header flex items-center justify-between flex-wrap gap-3">

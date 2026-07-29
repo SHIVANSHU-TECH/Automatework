@@ -85,7 +85,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <main className="p-8">
+    <main className="p-4 md:p-8">
       <div className="mx-auto max-w-5xl space-y-8">
 
         {/* Greeting */}

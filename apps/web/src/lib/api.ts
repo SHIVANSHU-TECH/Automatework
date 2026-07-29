@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken, clearToken } from './auth';
 
 export const apiUrl =
   process.env.NEXT_PUBLIC_API_URL ??
@@ -17,6 +17,7 @@ export const fetchJson = async <T>(path: string, options?: RequestInit): Promise
   const response = await fetch(`${apiUrl}${path}`, { ...options, headers });
 
   if (response.status === 401) {
+    clearToken();
     if (typeof window !== 'undefined') window.location.href = '/login';
     throw new Error('Session expired. Please log in again.');
   }

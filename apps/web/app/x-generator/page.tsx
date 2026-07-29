@@ -110,7 +110,10 @@ export default function XGeneratorPage() {
     if (!post) return;
     setPosting(true);
     const full = `${editBody}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(full)}`, '_blank');
+    navigator.clipboard.writeText(full);
+    window.open('https://twitter.com/compose/tweet', '_blank');
+    setMessage('Copied to clipboard! The post window will open automatically, just paste (Ctrl+V) your text.');
+    setTimeout(() => setMessage(null), 3000);
     setPosting(false);
   };
 

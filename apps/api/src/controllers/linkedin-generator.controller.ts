@@ -288,38 +288,4 @@ linkedinRouter.post('/:id/export', async (req: AuthRequest, res) => {
 
 // ─── LinkedIn Connection & Posting ───────────────────────────────────────────
 
-linkedinRouter.get('/status', async (req: AuthRequest, res) => {
-  try {
-    const data = await dbGet<{ connected: boolean }>(`user_data/${req.userId}/settings/linkedin`);
-    res.json({ connected: !!data?.connected });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to get status' });
-  }
-});
-
-linkedinRouter.post('/connect', async (req: AuthRequest, res) => {
-  try {
-    // Mocking OAuth connection
-    await dbSet(`user_data/${req.userId}/settings/linkedin`, { connected: true });
-    res.json({ success: true, message: 'LinkedIn account connected successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to connect' });
-  }
-});
-
-linkedinRouter.post('/post', async (req: AuthRequest, res) => {
-  try {
-    const data = await dbGet<{ connected: boolean }>(`user_data/${req.userId}/settings/linkedin`);
-    if (!data?.connected) return res.status(403).json({ message: 'LinkedIn account not connected' });
-
-    const { content } = req.body as { content: string };
-    if (!content) return res.status(400).json({ message: 'Content is required' });
-
-    // Mock posting to LinkedIn
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    res.json({ success: true, message: 'Posted to LinkedIn successfully!' });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to post to LinkedIn' });
-  }
-});
+// Removed unused mock connection endpoints (now handled by frontend direct intent)

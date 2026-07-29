@@ -49,11 +49,8 @@ export default function LinkedInGeneratorPage() {
   const [copying, setCopying]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
   const [message, setMessage]       = useState<string | null>(null);
-
-  // Integration State
-  const [isConnected, setIsConnected] = useState(false);
-  const [connecting, setConnecting]   = useState(false);
-  const [posting, setPosting]         = useState(false);
+  const [posting, setPosting]       = useState(false);
+  
   // Editable post body
   const [editHeadline, setEditHeadline] = useState('');
   const [editHook, setEditHook]         = useState('');
@@ -67,16 +64,8 @@ export default function LinkedInGeneratorPage() {
     } catch { setSaved([]); }
   };
 
-  const loadStatus = async () => {
-    try {
-      const data = await fetchJson<{ connected: boolean }>('/api/linkedin/status');
-      setIsConnected(data.connected);
-    } catch { setIsConnected(false); }
-  };
-
   useEffect(() => { 
     loadSaved(); 
-    loadStatus();
   }, []);
 
   useEffect(() => {
@@ -143,36 +132,16 @@ export default function LinkedInGeneratorPage() {
     await loadSaved();
   };
 
-  const handleConnect = async () => {
-    setConnecting(true);
-    try {
-      const res = await fetchJson<{ message: string }>('/api/linkedin/connect', { method: 'POST' });
-      setMessage(res.message);
-      setIsConnected(true);
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const handlePostInstantly = async () => {
+  const handlePostInstantly = () => {
     if (!post) return;
     setPosting(true);
-    try {
-      const full = `${editHeadline}\n\n${editHook}\n\n${editBody}\n\n${editCta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
-      const res = await fetchJson<{ message: string }>('/api/linkedin/post', {
-        method: 'POST',
-        body: JSON.stringify({ content: full }),
-      });
-      setMessage(res.message);
-      setTimeout(() => setMessage(null), 3000);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setPosting(false);
-    }
+    const full = `${editHeadline}\n\n${editHook}\n\n${editBody}\n\n${editCta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
+    // For LinkedIn, we copy to clipboard first because they don't support pre-filling text via intent URL
+    navigator.clipboard.writeText(full);
+    window.open('https://www.linkedin.com/feed/', '_blank');
+    setMessage('Copied to clipboard! Paste it directly into LinkedIn.');
+    setTimeout(() => setMessage(null), 3000);
+    setPosting(false);
   };
 
   const fullPostText = post
@@ -189,20 +158,6 @@ export default function LinkedInGeneratorPage() {
             <p className="mt-1 text-sm text-slate-500">Generate high-quality LinkedIn posts for your software agency.</p>
           </div>
           <div className="flex items-center gap-4">
-            {!isConnected ? (
-              <button onClick={handleConnect} disabled={connecting} className="btn-primary text-sm px-4 py-2">
-                {connecting ? 'Connecting...' : '🔗 Connect LinkedIn'}
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-sm font-medium border border-green-200">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                Connected
-              </div>
-            )}
-            <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
             <div className="flex gap-2">
               {(['generate','saved'] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
@@ -308,11 +263,9 @@ export default function LinkedInGeneratorPage() {
                     <button onClick={handleSave} disabled={saving} className="btn-primary text-xs px-3 py-2">
                       {saving ? 'Saving…' : '💾 Save'}
                     </button>
-                    {isConnected && (
-                      <button onClick={handlePostInstantly} disabled={posting} className="btn-primary bg-indigo-600 hover:bg-indigo-700 text-xs px-3 py-2 shadow-sm">
-                        {posting ? 'Posting…' : '🚀 Post Instantly'}
-                      </button>
-                    )}
+                    <button onClick={handlePostInstantly} disabled={posting} className="btn-primary bg-[#0A66C2] hover:bg-[#004182] text-white border-0 text-xs px-3 py-2 shadow-sm">
+                      {posting ? 'Opening…' : '🚀 Post Instantly'}
+                    </button>
                     <button onClick={handleGenerate} disabled={generating} className="btn-secondary text-xs px-3 py-2">
                       🔄 Regenerate
                     </button>

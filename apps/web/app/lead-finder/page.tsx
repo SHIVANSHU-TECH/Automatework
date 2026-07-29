@@ -300,7 +300,7 @@ export default function LeadFinderPage() {
                       </div>
                       {(isValidContact(lead.email) || isValidContact(lead.phone) || isValidContact(lead.linkedinUrl)) && (
                         <div className="flex gap-4 flex-wrap text-xs text-slate-500">
-                          {isValidContact(lead.email) && <span>Email: <span className="text-slate-800 font-medium">{lead.email}</span></span>}
+                          {isValidContact(lead.email) && <span>Email: <a href={`mailto:${lead.email}`} className="text-brandblue hover:underline font-medium">{lead.email}</a></span>}
                           {isValidContact(lead.phone) && (
                             <span>Phone: <a href={`tel:${lead.phone!.replace(/[^0-9+]/g, '')}`} className="text-brandblue hover:underline font-medium">{lead.phone}</a></span>
                           )}

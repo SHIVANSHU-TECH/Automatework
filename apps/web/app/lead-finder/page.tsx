@@ -150,6 +150,12 @@ export default function LeadFinderPage() {
     setSelected(s);
   };
 
+  const isValidContact = (val?: string) => {
+    if (!val) return false;
+    const s = val.toLowerCase().trim();
+    return s.length > 1 && s !== 'n/a' && s !== 'not found' && s !== 'not available' && s !== 'none';
+  };
+
   const industries = ['SaaS', 'Healthcare', 'E-commerce', 'Finance', 'Education', 'Real Estate', 'Manufacturing', 'Retail', 'Professional Services', 'Hospitality'];
   const sizes      = ['1-10', '11-50', '51-200', '201-500', '500+'];
 
@@ -292,15 +298,15 @@ export default function LeadFinderPage() {
                           <span>AI Score</span>
                         </div>
                       </div>
-                      {(lead.email || lead.phone || lead.linkedinUrl) && (
+                      {(isValidContact(lead.email) || isValidContact(lead.phone) || isValidContact(lead.linkedinUrl)) && (
                         <div className="flex gap-4 flex-wrap text-xs text-slate-500">
-                          {lead.email     && <span>Email: <span className="text-slate-800 font-medium">{lead.email}</span></span>}
-                          {lead.phone     && (
-                            <span>Phone: <a href={`tel:${lead.phone.replace(/[^0-9+]/g, '')}`} className="text-brandblue hover:underline font-medium">{lead.phone}</a></span>
+                          {isValidContact(lead.email) && <span>Email: <span className="text-slate-800 font-medium">{lead.email}</span></span>}
+                          {isValidContact(lead.phone) && (
+                            <span>Phone: <a href={`tel:${lead.phone!.replace(/[^0-9+]/g, '')}`} className="text-brandblue hover:underline font-medium">{lead.phone}</a></span>
                           )}
-                          {lead.linkedinUrl && (
+                          {isValidContact(lead.linkedinUrl) && (
                             <a
-                              href={/^https?:\/\//i.test(lead.linkedinUrl.trim()) ? lead.linkedinUrl.trim() : `https://${lead.linkedinUrl.trim().replace(/^\/+/, '')}`}
+                              href={/^https?:\/\//i.test(lead.linkedinUrl!.trim()) ? lead.linkedinUrl!.trim() : `https://${lead.linkedinUrl!.trim().replace(/^\/+/, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-brandblue hover:underline font-medium"

@@ -12,6 +12,7 @@ import { screenshotRouter } from './controllers/screenshot.controller';
 // V2 modules
 import { leadFinderRouter } from './controllers/lead-finder.controller';
 import { linkedinRouter } from './controllers/linkedin-generator.controller';
+import { xRouter } from './controllers/x-generator.controller';
 import { urlShortenerRouter } from './controllers/url-shortener.controller';
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/screenshots', screenshotRouter);
 // V2 routes
 app.use('/api/leads', leadFinderRouter);
 app.use('/api/linkedin', linkedinRouter);
+app.use('/api/x-generator', xRouter);
 app.use('/api/urls', urlShortenerRouter);
 
 // Short URL redirect (public)

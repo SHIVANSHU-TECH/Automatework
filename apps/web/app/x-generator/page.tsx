@@ -4,47 +4,43 @@ import { useState, useEffect } from 'react';
 import { fetchJson, apiUrl } from '../../src/lib/api';
 import { getToken } from '../../src/lib/auth';
 
-interface LinkedInPost {
+interface XPost {
   postId: string;
   contentType: string;
   topic: string;
   tone: string;
   audience: string;
-  headline: string;
-  hook: string;
+  format: string;
+  emojiUsage: string;
+  hashtagCount: number;
   body: string;
-  ctaText: string;
   hashtags: string[];
-  imageSuggestions: string[];
-  carouselSuggestions: string[];
-  commentStrategy: string;
   bestPostingTime: string;
   proposalId?: string;
   createdAt: string;
 }
 
-const CONTENT_TYPES = ['Educational','Case Study','Project Showcase','Company Update','Hiring','Technical Tips','Automation','Web Development','React / Next.js','Startup','Founder Journey','Client Win','Product Launch'];
-const TONES = ['Professional','Conversational','Inspirational','Bold','Humorous'];
-const LENGTHS = ['Short (50-100 words)','Medium (150-300 words)','Long (400-600 words)'];
+const CONTENT_TYPES = ['Educational','Case Study','Project Showcase','Company Update','Hiring','Technical Tips','Startup','Founder Journey','Product Launch'];
+const TONES = ['Professional','Conversational','Inspirational','Bold','Humorous','Controversial'];
+const FORMATS = ['Single Tweet','Thread'];
 const EMOJI_OPTIONS = ['None','Minimal','Moderate','Heavy'];
 
-export default function LinkedInGeneratorPage() {
+export default function XGeneratorPage() {
   const [tab, setTab] = useState<'generate' | 'saved'>('generate');
 
   // Form
   const [contentType, setContentType] = useState('Educational');
   const [topic, setTopic]             = useState('');
-  const [tone, setTone]               = useState('Professional');
-  const [audience, setAudience]       = useState('Software Decision Makers');
-  const [length, setLength]           = useState('Medium (150-300 words)');
-  const [cta, setCta]                 = useState('Comment below');
+  const [tone, setTone]               = useState('Conversational');
+  const [audience, setAudience]       = useState('Tech Community');
+  const [format, setFormat]           = useState('Single Tweet');
   const [emojiUsage, setEmojiUsage]   = useState('Moderate');
-  const [hashtagCount, setHashtagCount] = useState(5);
+  const [hashtagCount, setHashtagCount] = useState(2);
 
   // State
   const [generating, setGenerating] = useState(false);
-  const [post, setPost]             = useState<LinkedInPost | null>(null);
-  const [saved, setSaved]           = useState<LinkedInPost[]>([]);
+  const [post, setPost]             = useState<XPost | null>(null);
+  const [saved, setSaved]           = useState<XPost[]>([]);
   const [saving, setSaving]         = useState(false);
   const [copying, setCopying]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
@@ -54,22 +50,20 @@ export default function LinkedInGeneratorPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [connecting, setConnecting]   = useState(false);
   const [posting, setPosting]         = useState(false);
+  
   // Editable post body
-  const [editHeadline, setEditHeadline] = useState('');
-  const [editHook, setEditHook]         = useState('');
-  const [editBody, setEditBody]         = useState('');
-  const [editCta, setEditCta]           = useState('');
+  const [editBody, setEditBody]       = useState('');
 
   const loadSaved = async () => {
     try {
-      const data = await fetchJson<{ posts: LinkedInPost[] }>('/api/linkedin');
+      const data = await fetchJson<{ posts: XPost[] }>('/api/x-generator');
       setSaved(data.posts ?? []);
     } catch { setSaved([]); }
   };
 
   const loadStatus = async () => {
     try {
-      const data = await fetchJson<{ connected: boolean }>('/api/linkedin/status');
+      const data = await fetchJson<{ connected: boolean }>('/api/x-generator/status');
       setIsConnected(data.connected);
     } catch { setIsConnected(false); }
   };
@@ -81,10 +75,7 @@ export default function LinkedInGeneratorPage() {
 
   useEffect(() => {
     if (post) {
-      setEditHeadline(post.headline);
-      setEditHook(post.hook);
       setEditBody(post.body);
-      setEditCta(post.ctaText);
     }
   }, [post]);
 
@@ -92,9 +83,9 @@ export default function LinkedInGeneratorPage() {
     if (!topic.trim()) { setError('Topic is required'); return; }
     setGenerating(true); setError(null); setPost(null);
     try {
-      const data = await fetchJson<{ post: LinkedInPost }>('/api/linkedin/generate', {
+      const data = await fetchJson<{ post: XPost }>('/api/x-generator/generate', {
         method: 'POST',
-        body: JSON.stringify({ contentType, topic, tone, audience, length, cta, emojiUsage, hashtagCount }),
+        body: JSON.stringify({ contentType, topic, tone, audience, format, emojiUsage, hashtagCount }),
       });
       setPost(data.post);
     } catch (err) { setError((err as Error).message); }
@@ -105,8 +96,8 @@ export default function LinkedInGeneratorPage() {
     if (!post) return;
     setSaving(true);
     try {
-      const toSave = { ...post, headline: editHeadline, hook: editHook, body: editBody, ctaText: editCta };
-      await fetchJson('/api/linkedin/save', { method: 'POST', body: JSON.stringify(toSave) });
+      const toSave = { ...post, body: editBody };
+      await fetchJson('/api/x-generator/save', { method: 'POST', body: JSON.stringify(toSave) });
       setMessage('Post saved!');
       await loadSaved();
       setTimeout(() => setMessage(null), 2500);
@@ -116,37 +107,21 @@ export default function LinkedInGeneratorPage() {
 
   const handleCopy = async () => {
     if (!post) return;
-    const full = `${editHeadline}\n\n${editHook}\n\n${editBody}\n\n${editCta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
+    const full = `${editBody}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
     await navigator.clipboard.writeText(full);
     setCopying(true);
     setTimeout(() => setCopying(false), 2000);
   };
 
-  const handleExport = async (savedPost: LinkedInPost, format: string) => {
-    const token = getToken();
-    const res = await fetch(`${apiUrl}/api/linkedin/${savedPost.postId}/export`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ format }),
-    });
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = `linkedin-post.${format === 'docx' ? 'docx' : format === 'html' ? 'html' : 'md'}`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handleDelete = async (postId: string) => {
-    await fetchJson(`/api/linkedin/${postId}`, { method: 'DELETE' });
+    await fetchJson(`/api/x-generator/${postId}`, { method: 'DELETE' });
     await loadSaved();
   };
 
   const handleConnect = async () => {
     setConnecting(true);
     try {
-      const res = await fetchJson<{ message: string }>('/api/linkedin/connect', { method: 'POST' });
+      const res = await fetchJson<{ message: string }>('/api/x-generator/connect', { method: 'POST' });
       setMessage(res.message);
       setIsConnected(true);
       setTimeout(() => setMessage(null), 3000);
@@ -161,8 +136,8 @@ export default function LinkedInGeneratorPage() {
     if (!post) return;
     setPosting(true);
     try {
-      const full = `${editHeadline}\n\n${editHook}\n\n${editBody}\n\n${editCta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
-      const res = await fetchJson<{ message: string }>('/api/linkedin/post', {
+      const full = `${editBody}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`;
+      const res = await fetchJson<{ message: string }>('/api/x-generator/post', {
         method: 'POST',
         body: JSON.stringify({ content: full }),
       });
@@ -176,7 +151,7 @@ export default function LinkedInGeneratorPage() {
   };
 
   const fullPostText = post
-    ? `${editHeadline}\n\n${editHook}\n\n${editBody}\n\n${editCta}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`
+    ? `${editBody}\n\n${post.hashtags.map(h => `#${h.replace(/^#/, '')}`).join(' ')}`
     : '';
 
   return (
@@ -185,13 +160,13 @@ export default function LinkedInGeneratorPage() {
 
         <div className="page-header flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">LinkedIn Content Generator</h1>
-            <p className="mt-1 text-sm text-slate-500">Generate high-quality LinkedIn posts for your software agency.</p>
+            <h1 className="text-2xl font-bold text-slate-900">X (Twitter) Content Generator</h1>
+            <p className="mt-1 text-sm text-slate-500">Generate high-performing tweets and threads.</p>
           </div>
           <div className="flex items-center gap-4">
             {!isConnected ? (
-              <button onClick={handleConnect} disabled={connecting} className="btn-primary text-sm px-4 py-2">
-                {connecting ? 'Connecting...' : '🔗 Connect LinkedIn'}
+              <button onClick={handleConnect} disabled={connecting} className="btn-primary bg-black text-white hover:bg-zinc-800 text-sm px-4 py-2 border-0">
+                {connecting ? 'Connecting...' : '𝕏 Connect X Account'}
               </button>
             ) : (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-sm font-medium border border-green-200">
@@ -234,7 +209,7 @@ export default function LinkedInGeneratorPage() {
               <label className="flex flex-col gap-1.5">
                 <span className="section-label">Topic *</span>
                 <input className="input-base" value={topic} onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g. How we helped a clinic save 10hrs/week" />
+                  placeholder="e.g. Next.js server components" />
               </label>
 
               <label className="flex flex-col gap-1.5">
@@ -246,19 +221,14 @@ export default function LinkedInGeneratorPage() {
 
               <label className="flex flex-col gap-1.5">
                 <span className="section-label">Target Audience</span>
-                <input className="input-base" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="e.g. SME owners" />
+                <input className="input-base" value={audience} onChange={(e) => setAudience(e.target.value)} placeholder="e.g. Frontend Devs" />
               </label>
 
               <label className="flex flex-col gap-1.5">
-                <span className="section-label">Length</span>
-                <select className="input-base" value={length} onChange={(e) => setLength(e.target.value)}>
-                  {LENGTHS.map((l) => <option key={l}>{l}</option>)}
+                <span className="section-label">Format</span>
+                <select className="input-base" value={format} onChange={(e) => setFormat(e.target.value)}>
+                  {FORMATS.map((f) => <option key={f}>{f}</option>)}
                 </select>
-              </label>
-
-              <label className="flex flex-col gap-1.5">
-                <span className="section-label">Call to Action</span>
-                <input className="input-base" value={cta} onChange={(e) => setCta(e.target.value)} placeholder="e.g. DM me" />
               </label>
 
               <div className="grid grid-cols-2 gap-3">
@@ -271,7 +241,7 @@ export default function LinkedInGeneratorPage() {
                 <label className="flex flex-col gap-1.5">
                   <span className="section-label">Hashtags</span>
                   <select className="input-base" value={hashtagCount} onChange={(e) => setHashtagCount(Number(e.target.value))}>
-                    {[3,5,7,10].map((n) => <option key={n} value={n}>{n}</option>)}
+                    {[0,1,2,3,4,5].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
               </div>
@@ -292,9 +262,9 @@ export default function LinkedInGeneratorPage() {
             <div>
               {!post && !generating && (
                 <div className="card flex flex-col items-center py-16 text-center border-dashed border-2">
-                  <span className="text-4xl mb-3">✏️</span>
+                  <span className="text-4xl mb-3">𝕏</span>
                   <p className="text-sm font-medium text-slate-600">Fill in the settings and click Generate</p>
-                  <p className="text-xs text-slate-400 mt-1">Your LinkedIn post will appear here</p>
+                  <p className="text-xs text-slate-400 mt-1">Your X post will appear here</p>
                 </div>
               )}
 
@@ -309,8 +279,8 @@ export default function LinkedInGeneratorPage() {
                       {saving ? 'Saving…' : '💾 Save'}
                     </button>
                     {isConnected && (
-                      <button onClick={handlePostInstantly} disabled={posting} className="btn-primary bg-indigo-600 hover:bg-indigo-700 text-xs px-3 py-2 shadow-sm">
-                        {posting ? 'Posting…' : '🚀 Post Instantly'}
+                      <button onClick={handlePostInstantly} disabled={posting} className="btn-primary bg-black hover:bg-zinc-800 text-white border-0 text-xs px-3 py-2 shadow-sm">
+                        {posting ? 'Posting…' : '🚀 Post to X'}
                       </button>
                     )}
                     <button onClick={handleGenerate} disabled={generating} className="btn-secondary text-xs px-3 py-2">
@@ -321,26 +291,14 @@ export default function LinkedInGeneratorPage() {
                   {/* Editable post */}
                   <div className="card space-y-4">
                     <label className="flex flex-col gap-1.5">
-                      <span className="section-label">Headline</span>
-                      <input className="input-base font-semibold" value={editHeadline} onChange={(e) => setEditHeadline(e.target.value)} />
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="section-label">Hook (First Lines)</span>
-                      <textarea className="input-base min-h-[60px] resize-y" value={editHook} onChange={(e) => setEditHook(e.target.value)} />
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="section-label">Body</span>
-                      <textarea className="input-base min-h-[160px] resize-y" value={editBody} onChange={(e) => setEditBody(e.target.value)} />
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="section-label">Call to Action</span>
-                      <input className="input-base" value={editCta} onChange={(e) => setEditCta(e.target.value)} />
+                      <span className="section-label">Post Body</span>
+                      <textarea className="input-base min-h-[160px] resize-y font-sans text-sm" value={editBody} onChange={(e) => setEditBody(e.target.value)} />
                     </label>
                     <div>
                       <span className="section-label">Hashtags</span>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {post.hashtags.map((h, i) => (
-                          <span key={i} className="rounded-full bg-blue-50 px-3 py-0.5 text-xs text-blue-700 font-medium">#{h.replace(/^#/, '')}</span>
+                          <span key={i} className="rounded-full bg-slate-100 px-3 py-0.5 text-xs text-slate-600 font-medium">#{h.replace(/^#/, '')}</span>
                         ))}
                       </div>
                     </div>
@@ -348,22 +306,6 @@ export default function LinkedInGeneratorPage() {
 
                   {/* Meta */}
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {post.imageSuggestions.length > 0 && (
-                      <div className="card">
-                        <p className="section-label mb-2">Image Ideas</p>
-                        <ul className="space-y-1">{post.imageSuggestions.map((s,i) => <li key={i} className="text-xs text-slate-600 flex gap-2"><span className="text-blue-400 shrink-0">•</span>{s}</li>)}</ul>
-                      </div>
-                    )}
-                    {post.carouselSuggestions.length > 0 && (
-                      <div className="card">
-                        <p className="section-label mb-2">Carousel Slides</p>
-                        <ul className="space-y-1">{post.carouselSuggestions.map((s,i) => <li key={i} className="text-xs text-slate-600 flex gap-2"><span className="text-purple-400 shrink-0">{i+1}.</span>{s}</li>)}</ul>
-                      </div>
-                    )}
-                    <div className="card">
-                      <p className="section-label mb-1">Comment Strategy</p>
-                      <p className="text-xs text-slate-600">{post.commentStrategy}</p>
-                    </div>
                     <div className="card">
                       <p className="section-label mb-1">Best Posting Time</p>
                       <p className="text-xs font-semibold text-slate-700">{post.bestPostingTime}</p>
@@ -371,7 +313,10 @@ export default function LinkedInGeneratorPage() {
                   </div>
 
                   {/* Character count */}
-                  <p className="text-xs text-slate-400 text-right">{fullPostText.length} characters</p>
+                  <p className={`text-xs text-right ${fullPostText.length > 280 && format === 'Single Tweet' ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                    {fullPostText.length} characters
+                    {format === 'Single Tweet' && fullPostText.length > 280 && ' (Over limit!)'}
+                  </p>
                 </div>
               )}
             </div>
@@ -392,24 +337,21 @@ export default function LinkedInGeneratorPage() {
                   <div key={p.postId} className="card space-y-3">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">{p.headline}</p>
+                        <p className="text-sm font-semibold text-slate-900">{p.topic}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="badge text-xs bg-blue-50 text-blue-700">{p.contentType}</span>
-                          <span className="badge text-xs bg-slate-100 text-slate-600">{p.tone}</span>
+                          <span className="badge text-xs bg-slate-100 text-slate-700">{p.contentType}</span>
+                          <span className="badge text-xs bg-slate-100 text-slate-600">{p.format}</span>
                           <span className="text-xs text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
                       <div className="flex gap-1.5 shrink-0">
-                        {['markdown','html','docx'].map((fmt) => (
-                          <button key={fmt} onClick={() => handleExport(p, fmt)} className="btn-secondary text-xs px-2 py-1">{fmt.toUpperCase()}</button>
-                        ))}
                         <button onClick={() => handleDelete(p.postId)} className="text-red-400 hover:text-red-600 text-xs px-2 py-1">✕</button>
                       </div>
                     </div>
-                    <p className="text-xs text-slate-600 line-clamp-3">{p.hook} {p.body}</p>
+                    <p className="text-xs text-slate-600 whitespace-pre-wrap">{p.body}</p>
                     <div className="flex flex-wrap gap-1">
                       {p.hashtags.slice(0, 5).map((h, i) => (
-                        <span key={i} className="text-xs text-blue-500">#{h.replace(/^#/, '')}</span>
+                        <span key={i} className="text-xs text-slate-500">#{h.replace(/^#/, '')}</span>
                       ))}
                     </div>
                   </div>

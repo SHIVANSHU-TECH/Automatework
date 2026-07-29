@@ -285,3 +285,41 @@ linkedinRouter.post('/:id/export', async (req: AuthRequest, res) => {
     res.status(500).json({ message: (error as Error).message || 'Export failed' });
   }
 });
+
+// ─── LinkedIn Connection & Posting ───────────────────────────────────────────
+
+linkedinRouter.get('/status', async (req: AuthRequest, res) => {
+  try {
+    const isConnected = await dbGet<boolean>(`user_data/${req.userId}/linkedin_connected`);
+    res.json({ connected: !!isConnected });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to get status' });
+  }
+});
+
+linkedinRouter.post('/connect', async (req: AuthRequest, res) => {
+  try {
+    // Mocking OAuth connection
+    await dbSet(`user_data/${req.userId}/linkedin_connected`, true);
+    res.json({ success: true, message: 'LinkedIn account connected successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to connect' });
+  }
+});
+
+linkedinRouter.post('/post', async (req: AuthRequest, res) => {
+  try {
+    const isConnected = await dbGet<boolean>(`user_data/${req.userId}/linkedin_connected`);
+    if (!isConnected) return res.status(403).json({ message: 'LinkedIn account not connected' });
+
+    const { content } = req.body as { content: string };
+    if (!content) return res.status(400).json({ message: 'Content is required' });
+
+    // Mock posting to LinkedIn
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    res.json({ success: true, message: 'Posted to LinkedIn successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to post to LinkedIn' });
+  }
+});

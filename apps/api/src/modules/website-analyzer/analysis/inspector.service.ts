@@ -2,8 +2,18 @@ import { load, type CheerioAPI } from 'cheerio';
 import dns from 'dns/promises';
 import axios from 'axios';
 import { extractContent } from '../../content-extraction/content.service';
+import type {
+  CoreWebVitals,
+  LighthouseScores,
+  DomainInfo,
+  SecurityHeaders,
+  CrawlabilityInfo,
+  ContentInsights,
+  TrafficRank,
+} from '../types';
 
 export type InspectionResult = {
+  // V1 fields
   framework?: string;
   cms?: string;
   hosting?: string;
@@ -19,6 +29,17 @@ export type InspectionResult = {
   businessCategory: string;
   detectedTechnologies: string[];
   contentExtraction: Awaited<ReturnType<typeof extractContent>>;
+
+  // V2 fields (populated by website-analyzer.service.ts via parallel calls)
+  coreWebVitals?: CoreWebVitals;
+  lighthouseScores?: LighthouseScores;
+  domainInfo?: DomainInfo;
+  securityHeaders?: SecurityHeaders;
+  crawlability?: CrawlabilityInfo;
+  contentInsights?: ContentInsights;
+  trafficRank?: TrafficRank;
+  analysisTimestamp?: string;
+  lighthouseError?: string;
 };
 
 const socialDomains = [

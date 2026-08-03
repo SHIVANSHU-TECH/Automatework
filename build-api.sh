@@ -67,4 +67,13 @@ for ctrl in lead-finder linkedin-generator url-shortener; do
   fi
 done
 
+echo "==> Verifying V2 analysis services..."
+for svc in content-insights tranco; do
+  if [ -f "apps/api/dist/modules/website-analyzer/analysis/${svc}.service.js" ]; then
+    echo "  ok ${svc}.service.js"
+  else
+    echo "  MISSING ${svc}.service.js"
+  fi
+done
+
 echo "==> SUCCESS"

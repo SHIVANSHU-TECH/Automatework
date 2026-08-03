@@ -2,26 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import Sidebar from './Sidebar';
+
+// Pages that render their own layout (no sidebar)
+const NO_SIDEBAR = ['/', '/login'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
-  const isLogin = pathname === '/login';
+  const isNoSidebar = NO_SIDEBAR.includes(pathname);
 
   // Close sidebar on route change on mobile
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname]);
 
-  if (isLogin) {
+  // Home and login manage their own layout
+  if (isNoSidebar) {
     return <>{children}</>;
   }
 
   return (
     <div className="flex min-h-screen">
       <Sidebar isOpen={isMobileOpen} setIsOpen={setIsMobileOpen} />
-      
+
       <div className="flex-1 flex flex-col md:ml-56 min-w-0 min-h-screen transition-all">
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between px-5 h-14 bg-navy text-white sticky top-0 z-20 shadow-md border-b border-customBorder/5">
@@ -31,7 +36,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <p className="text-sm font-bold leading-tight">Automate Work</p>
           </div>
-          <button onClick={() => setIsMobileOpen(true)} className="p-2 -mr-2 text-slate-300 hover:text-white transition-colors">
+          <button
+            onClick={() => setIsMobileOpen(true)}
+            className="p-2 -mr-2 text-slate-300 hover:text-white transition-colors"
+          >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -46,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Backdrop for Mobile */}
       {isMobileOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-navy/80 z-30 md:hidden backdrop-blur-sm transition-opacity"
           onClick={() => setIsMobileOpen(false)}
         />

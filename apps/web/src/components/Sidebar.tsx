@@ -112,14 +112,26 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIs
         </button>
       </div>
 
-      {/* Logo */}
-      <div className="hidden md:flex h-14 items-center gap-2.5 px-5 border-b border-customBorder/5">
-        <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 shrink-0 p-1.5">
-          <img src="/favicon.png" className="w-full h-full object-contain" alt="Automate Work Favicon" />
+      {/* Logo + Home arrow */}
+      <div className="hidden md:flex h-14 items-center justify-between px-4 border-b border-customBorder/5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/10 shrink-0 p-1.5">
+            <img src="/favicon.png" className="w-full h-full object-contain" alt="Automate Work Favicon" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-white leading-tight truncate">Automate Work</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-bold text-white leading-tight">Automate Work</p>
-        </div>
+        {/* Back to home */}
+        <Link
+          href="/"
+          title="Back to Home"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 hover:bg-white/10 hover:text-white transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+        </Link>
       </div>
 
       {/* Nav */}

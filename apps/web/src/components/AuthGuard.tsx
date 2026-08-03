@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { isAuthenticated } from '../lib/auth';
 
-const PUBLIC_PATHS = ['/login'];
+const PUBLIC_PATHS = ['/', '/login'];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
@@ -17,7 +17,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (!pub && !auth) {
       router.replace('/login');
-    } else if (pub && auth) {
+    } else if (pathname === '/login' && auth) {
+      // Redirect authed users away from login → dashboard
       router.replace('/dashboard');
     } else {
       setReady(true);

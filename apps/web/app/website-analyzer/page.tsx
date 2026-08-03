@@ -82,7 +82,9 @@ function IssueList({ items, emptyText = 'No issues found ✓' }: { items: string
 }
 
 function BulletList({ items, max = 6 }: { items: string[]; max?: number }) {
-  const visible = items.slice(0, max);
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? items : items.slice(0, max);
+  const overflow = items.length - max;
   return (
     <ul className="space-y-1">
       {visible.map((item, i) => (
@@ -91,8 +93,214 @@ function BulletList({ items, max = 6 }: { items: string[]; max?: number }) {
           <span className="line-clamp-2">{item}</span>
         </li>
       ))}
-      {items.length > max && <li className="text-xs text-slate-400">+{items.length - max} more…</li>}
+      {overflow > 0 && (
+        <li>
+          <button
+            onClick={() => setExpanded(v => !v)}
+            className="text-xs text-blue-500 hover:text-blue-700 font-medium transition-colors cursor-pointer mt-0.5"
+          >
+            {expanded ? '− Show less' : `+${overflow} more`}
+          </button>
+        </li>
+      )}
     </ul>
+  );
+}
+
+// ─── Problems & SEO Solutions ─────────────────────────────────────────────────
+interface Problem {
+  issue: string;
+  impact: 'high' | 'medium' | 'low';
+  solution: string;
+  seoTip: string;
+}
+
+function buildProblems(r: AnalysisResult): Problem[] {
+  const problems: Problem[] = [];
+
+  r.seoIssues.forEach(issue => {
+    const lower = issue.toLowerCase();
+    let solution = 'Review and fix this SEO issue to improve search engine visibility.';
+    let seoTip = 'Addressing this will help search engines better understand your page.';
+
+    if (lower.includes('meta description') || lower.includes('missing meta')) {
+      solution = 'Add a unique meta description (150–160 characters) to every page that summarises the content and includes a target keyword.';
+      seoTip = 'Meta descriptions directly influence click-through rates in search results. A compelling description can significantly increase organic traffic.';
+    } else if (lower.includes('title') || lower.includes('missing title')) {
+      solution = 'Set a descriptive <title> tag (50–60 characters) on every page including your primary keyword near the beginning.';
+      seoTip = 'Page titles are one of the strongest on-page SEO signals. Missing or duplicate titles cause ranking issues.';
+    } else if (lower.includes('h1') || lower.includes('heading')) {
+      solution = 'Ensure each page has exactly one H1 tag containing the primary keyword. Use H2–H6 tags to create a logical content hierarchy.';
+      seoTip = 'A proper heading structure helps search engines parse content relevance and improves readability for users.';
+    } else if (lower.includes('canonical')) {
+      solution = 'Add canonical tags to indicate the preferred version of each URL and prevent duplicate content penalties.';
+      seoTip = 'Canonical tags are essential for sites with similar or duplicate content spread across multiple URLs.';
+    } else if (lower.includes('sitemap')) {
+      solution = 'Create and submit an XML sitemap to Google Search Console to help search engines discover and index all pages.';
+      seoTip = 'A sitemap speeds up indexing, especially for new pages and large sites.';
+    } else if (lower.includes('robots') || lower.includes('noindex') || lower.includes('nofollow')) {
+      solution = 'Review your robots.txt and meta robots tags. Ensure important pages are not accidentally blocked from indexing.';
+      seoTip = 'Accidentally blocking pages with noindex or disallow rules can remove them from search results entirely.';
+    } else if (lower.includes('alt') || lower.includes('image')) {
+      solution = 'Add descriptive alt attributes to all images. Include relevant keywords naturally without keyword stuffing.';
+      seoTip = 'Alt text helps search engines index images and improves accessibility, which is a ranking factor.';
+    } else if (lower.includes('slow') || lower.includes('speed') || lower.includes('performance')) {
+      solution = 'Optimise images (WebP format), enable browser caching, minify CSS/JS, and consider a CDN to improve load speed.';
+      seoTip = 'Google uses Core Web Vitals as a ranking factor. Slow pages rank lower and have higher bounce rates.';
+    } else if (lower.includes('structured data') || lower.includes('schema')) {
+      solution = 'Implement JSON-LD structured data markup for your content type (Product, Article, FAQ, etc.) to enable rich search results.';
+      seoTip = 'Structured data can unlock rich snippets in search results, improving visibility and click-through rates by up to 30%.';
+    }
+
+    problems.push({ issue, impact: 'high', solution, seoTip });
+  });
+
+  r.accessibilityIssues.forEach(issue => {
+    const lower = issue.toLowerCase();
+    let solution = 'Fix this accessibility issue to improve usability for all users.';
+    let seoTip = 'Accessibility improvements often align with SEO best practices and can improve rankings.';
+
+    if (lower.includes('alt') || lower.includes('image')) {
+      solution = 'Add descriptive alt text to all images and decorative images should use alt="".';
+      seoTip = 'Proper alt text improves both accessibility and image SEO, helping your images rank in Google Images.';
+    } else if (lower.includes('contrast') || lower.includes('color')) {
+      solution = 'Ensure text has a minimum contrast ratio of 4.5:1 against its background. Use a contrast checker tool.';
+      seoTip = 'Better readability reduces bounce rate, which indirectly benefits SEO by signalling content quality.';
+    } else if (lower.includes('link') || lower.includes('anchor')) {
+      solution = 'Give all links descriptive text. Replace "click here" or "read more" with meaningful phrases describing the destination.';
+      seoTip = 'Descriptive anchor text helps search engines understand what the linked page is about and passes more relevant link equity.';
+    } else if (lower.includes('label') || lower.includes('form') || lower.includes('input')) {
+      solution = 'Associate every form input with a visible <label> element using the for/id attribute pair.';
+      seoTip = 'Well-labeled forms improve user engagement, reducing form abandonment and improving conversion signals.';
+    } else if (lower.includes('button') || lower.includes('type')) {
+      solution = 'Add type="button", type="submit", or type="reset" to all <button> elements to define their intended behaviour.';
+      seoTip = 'Properly functioning interactive elements improve user experience, reducing bounce rate.';
+    }
+
+    problems.push({ issue, impact: 'medium', solution, seoTip });
+  });
+
+  if (!r.sslValid) {
+    problems.push({
+      issue: 'No SSL certificate (HTTP)',
+      impact: 'high',
+      solution: 'Install an SSL certificate (free via Let\'s Encrypt) and redirect all HTTP traffic to HTTPS.',
+      seoTip: 'HTTPS is a confirmed Google ranking factor. Non-HTTPS sites are marked as "Not Secure" in browsers, reducing user trust and click-through rates.',
+    });
+  }
+
+  if (!r.isMobileResponsive) {
+    problems.push({
+      issue: 'Not mobile responsive',
+      impact: 'high',
+      solution: 'Implement a responsive design using CSS media queries or a mobile-first framework. Test with Google\'s Mobile-Friendly Test tool.',
+      seoTip: 'Google uses mobile-first indexing, meaning the mobile version of your site is the primary version used for ranking.',
+    });
+  }
+
+  if ((r.performanceScore ?? 100) < 50) {
+    problems.push({
+      issue: `Low performance score (${r.performanceScore}/100)`,
+      impact: 'high',
+      solution: 'Run a Lighthouse audit, compress images, remove render-blocking resources, enable lazy loading, and use a CDN.',
+      seoTip: 'Core Web Vitals (LCP, CLS, FID) are Google ranking factors. A score below 50 significantly hurts search rankings.',
+    });
+  } else if ((r.performanceScore ?? 100) < 70) {
+    problems.push({
+      issue: `Performance needs improvement (${r.performanceScore}/100)`,
+      impact: 'medium',
+      solution: 'Optimise images to WebP, defer non-critical JavaScript, and enable browser caching headers.',
+      seoTip: 'Improving performance from 50–70 range to 90+ can move pages up several positions in search results.',
+    });
+  }
+
+  if (r.brokenLinks.length > 0) {
+    problems.push({
+      issue: `${r.brokenLinks.length} broken link${r.brokenLinks.length > 1 ? 's' : ''} detected`,
+      impact: 'medium',
+      solution: 'Fix or remove all broken links. Set up 301 redirects for moved content and regularly audit links with a crawl tool.',
+      seoTip: 'Broken links create a poor user experience and waste crawl budget. Google may lower the trust score of pages with many broken links.',
+    });
+  }
+
+  if (!r.contactInformation.length) {
+    problems.push({
+      issue: 'No contact information found',
+      impact: 'low',
+      solution: 'Add a visible contact page with phone, email, and physical address. Include schema.org LocalBusiness markup.',
+      seoTip: 'Contact information signals trustworthiness (E-E-A-T) to Google. Local businesses especially benefit from NAP (Name, Address, Phone) consistency.',
+    });
+  }
+
+  if (!r.socialLinks.length) {
+    problems.push({
+      issue: 'No social media links found',
+      impact: 'low',
+      solution: 'Add links to active social media profiles in the footer or header. Ensure social profiles are complete and consistent with your brand.',
+      seoTip: 'Social signals and brand mentions contribute to perceived authority. Active social profiles can drive traffic and backlinks.',
+    });
+  }
+
+  return problems;
+}
+
+const impactConfig = {
+  high:   { label: 'High Impact',   bg: 'bg-red-50',    border: 'border-red-200',    badge: 'bg-red-100 text-red-700',    dot: 'bg-red-500'    },
+  medium: { label: 'Medium Impact', bg: 'bg-amber-50',  border: 'border-amber-200',  badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500'  },
+  low:    { label: 'Low Impact',    bg: 'bg-slate-50',  border: 'border-slate-200',  badge: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400'  },
+};
+
+function ProblemsSection({ result }: { result: AnalysisResult }) {
+  const problems = buildProblems(result);
+  if (!problems.length) return null;
+
+  const high   = problems.filter(p => p.impact === 'high');
+  const medium = problems.filter(p => p.impact === 'medium');
+  const low    = problems.filter(p => p.impact === 'low');
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800">Website Problems & Solutions</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Identified issues with actionable fixes and SEO improvement tips.</p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {high.length   > 0 && <span className="rounded-full bg-red-100 text-red-700 text-xs font-medium px-2.5 py-0.5">{high.length} High</span>}
+          {medium.length > 0 && <span className="rounded-full bg-amber-100 text-amber-700 text-xs font-medium px-2.5 py-0.5">{medium.length} Medium</span>}
+          {low.length    > 0 && <span className="rounded-full bg-slate-100 text-slate-600 text-xs font-medium px-2.5 py-0.5">{low.length} Low</span>}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {problems.map((p, i) => {
+          const cfg = impactConfig[p.impact];
+          return (
+            <div key={i} className={`rounded-xl border ${cfg.border} ${cfg.bg} p-4 space-y-2`}>
+              <div className="flex items-start gap-2.5">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${cfg.dot}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-slate-800">{p.issue}</p>
+                    <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${cfg.badge}`}>{cfg.label}</span>
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-0.5">Solution</p>
+                      <p className="text-xs text-slate-700 leading-relaxed">{p.solution}</p>
+                    </div>
+                    <div className="rounded-lg bg-white/70 border border-blue-100 px-3 py-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 mb-0.5">SEO Impact</p>
+                      <p className="text-xs text-slate-600 leading-relaxed">{p.seoTip}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -217,7 +425,7 @@ export default function WebsiteAnalyzerPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>Analyzing…
                 </span>
-              ) : '🔍 Analyze'}
+              ) : 'Analyze'}
             </button>
           </div>
         </div>
@@ -241,7 +449,7 @@ export default function WebsiteAnalyzerPage() {
               <div className="flex gap-2 flex-wrap">
                 {!savedClientId && !showSaveForm && (
                   <button onClick={() => setShowSaveForm(true)} className="btn-secondary text-sm px-4 py-2">
-                    👥 Save to CRM
+                    Save to CRM
                   </button>
                 )}
                 <button
@@ -256,7 +464,7 @@ export default function WebsiteAnalyzerPage() {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>Creating…
                     </span>
-                  ) : '📄 Create Proposal'}
+                  ) : 'Create Proposal'}
                 </button>
               </div>
             </div>
@@ -304,6 +512,29 @@ export default function WebsiteAnalyzerPage() {
               </div>
             </div>
 
+            {/* Summary stats row */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {[
+                { label: 'SEO Issues',        value: result.seoIssues.length,           color: result.seoIssues.length > 0 ? 'text-red-600' : 'text-green-600'       },
+                { label: 'Accessibility',     value: result.accessibilityIssues.length, color: result.accessibilityIssues.length > 0 ? 'text-amber-600' : 'text-green-600' },
+                { label: 'Broken Links',      value: result.brokenLinks.length,         color: result.brokenLinks.length > 0 ? 'text-red-600' : 'text-green-600'      },
+                { label: 'Technologies',      value: result.detectedTechnologies.length,color: 'text-blue-600'                                                          },
+                { label: 'Content Sections',  value: [
+                    result.contentExtraction.headings,
+                    result.contentExtraction.services,
+                    result.contentExtraction.ctas,
+                    result.contentExtraction.pricing,
+                    result.contentExtraction.navigation,
+                    result.contentExtraction.forms,
+                  ].filter(arr => arr.length > 0).length,                               color: 'text-indigo-600'                                                        },
+              ].map(s => (
+                <div key={s.label} className="card flex flex-col gap-0.5 py-3 items-center text-center">
+                  <span className={`text-2xl font-black ${s.color}`}>{s.value}</span>
+                  <span className="text-[10px] text-slate-500 font-medium leading-tight">{s.label}</span>
+                </div>
+              ))}
+            </div>
+
             {/* Issues */}
             <div className="grid gap-4 sm:grid-cols-3">
               <Section title={`SEO Issues (${result.seoIssues.length})`}><IssueList items={result.seoIssues} /></Section>
@@ -345,6 +576,8 @@ export default function WebsiteAnalyzerPage() {
                 </dl>
               )}
             </Section>
+
+            <ProblemsSection result={result} />
           </div>
         )}
       </div>

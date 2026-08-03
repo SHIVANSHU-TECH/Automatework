@@ -207,7 +207,7 @@ export default function XGeneratorPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                     </svg>Generating…
                   </span>
-                ) : '✨ Generate Post'}
+                ) : 'Generate Post'}
               </button>
             </div>
 

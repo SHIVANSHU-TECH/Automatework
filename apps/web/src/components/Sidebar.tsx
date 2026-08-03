@@ -119,7 +119,6 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIs
         </div>
         <div>
           <p className="text-sm font-bold text-white leading-tight">Automate Work</p>
-          <p className="text-[10px] text-textsecondary leading-tight">AI Proposal Engine</p>
         </div>
       </div>
 

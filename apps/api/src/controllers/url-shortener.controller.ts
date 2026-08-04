@@ -62,8 +62,9 @@ urlShortenerRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
 
     const shortId   = uuidv4();
     const shortCode = generateShortCode(alias);
-    const baseUrl   = process.env.NEXT_PUBLIC_API_URL ?? 'https://automatework-tmfr.onrender.com';
-    const shortUrl  = `${baseUrl}/s/${shortCode}`;
+    // Use the web app domain for short URLs so they look like your-app.vercel.app/s/xxx
+    const appUrl  = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://automatework-web.vercel.app';
+    const shortUrl  = `${appUrl}/s/${shortCode}`;
 
     const entry: ShortUrl = {
       shortId,
@@ -230,7 +231,7 @@ urlShortenerRouter.post('/bulk', requireAuth, async (req: AuthRequest, res) => {
     const { urls } = req.body as { urls: Array<{ originalUrl: string; alias?: string }> };
     if (!Array.isArray(urls) || !urls.length) return res.status(400).json({ message: 'urls array required' });
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://automatework-tmfr.onrender.com';
+    const baseUrl = process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://automatework-web.vercel.app';
     const created: ShortUrl[] = [];
 
     for (const item of urls.slice(0, 50)) {

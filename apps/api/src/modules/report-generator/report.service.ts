@@ -95,14 +95,15 @@ const renderHtml = (p: Proposal): string => {
     .header {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
       padding-bottom: 20px;
       border-bottom: 3px solid ${BRAND.navy};
       margin-bottom: 28px;
     }
     .header img {
-      width: 52px;
-      height: 52px;
+      width: auto;
+      height: 56px;
+      max-width: 160px;
       object-fit: contain;
       flex-shrink: 0;
     }
@@ -112,15 +113,11 @@ const renderHtml = (p: Proposal): string => {
       display: flex; align-items: center; justify-content: center;
       font-weight: 800; font-size: 18px; flex-shrink: 0;
     }
-    .brand-text { min-width: 0; }
-    .brand-name {
-      font-size: 13px; font-weight: 700; letter-spacing: 0.04em;
-      text-transform: uppercase; color: ${BRAND.blue}; margin: 0 0 4px;
-    }
+    .brand-text { min-width: 0; flex: 1; display: flex; align-items: center; }
     h1 {
       margin: 0;
-      font-size: 26px;
-      line-height: 1.25;
+      font-size: 22px;
+      line-height: 1.3;
       color: ${BRAND.navy};
       font-weight: 800;
     }
@@ -171,7 +168,6 @@ const renderHtml = (p: Proposal): string => {
         ? `<img src="${logo}" alt="Automate Work"/>`
         : `<div class="brand-mark">AW</div>`}
       <div class="brand-text">
-        <p class="brand-name">Automate Work</p>
         <h1>${esc(p.title)}</h1>
       </div>
     </header>
@@ -272,22 +268,15 @@ const renderDocx = async (p: Proposal): Promise<Buffer> => {
 
   const headerChildren: unknown[] = [];
   if (logoBuf) {
+    // Logo already includes brand name — keep header as logo only (no stacked duplicate text)
     headerChildren.push(
       new Paragraph({
-        spacing: { after: 80 },
+        spacing: { after: 60 },
         children: [
           new ImageRun({
             type: 'png',
             data: logoBuf,
-            transformation: { width: 40, height: 40 },
-          }),
-          new TextRun({ text: '   ', font: 'Calibri', size: 20 }),
-          new TextRun({
-            text: 'Automate Work',
-            bold: true,
-            font: 'Calibri',
-            size: 20,
-            color: '2563EB',
+            transformation: { width: 120, height: 48 },
           }),
         ],
       }),
@@ -379,6 +368,7 @@ const renderPdf = (p: Proposal): Promise<Buffer> => {
         margin: 56,
         size: 'A4',
         bufferPages: true,
+        autoFirstPage: true,
         info: {
           Title: p.title,
           Author: 'Automate Work',
@@ -392,61 +382,81 @@ const renderPdf = (p: Proposal): Promise<Buffer> => {
 
       const left = 56;
       const contentWidth = doc.page.width - left * 2;
-      let y = 48;
+      const pageBottom = doc.page.height - 56; // usable content bottom (above footer)
+      const headerTop = 48;
+      const logoW = 110;
+      const logoH = 44;
+      const gap = 16;
 
-      // Header: logo left + brand
+      // Header: full logo (includes brand name) LEFT — title vertically centered beside it
+      let headerBottom = headerTop + logoH;
       if (logoPath) {
         try {
-          doc.image(logoPath, left, y, { width: 42, height: 42, fit: [42, 42] });
-        } catch { /* ignore image errors */ }
+          doc.image(logoPath, left, headerTop, { width: logoW, height: logoH, fit: [logoW, logoH] });
+        } catch {
+          doc.fillColor(BRAND.navy).font('Helvetica-Bold').fontSize(11)
+            .text('Automate Work', left, headerTop + 14, { lineBreak: false });
+        }
       } else {
-        doc.roundedRect(left, y, 42, 42, 8).fill(BRAND.navy);
-        doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(12)
-          .text('AW', left, y + 14, { width: 42, align: 'center' });
+        doc.fillColor(BRAND.navy).font('Helvetica-Bold').fontSize(11)
+          .text('Automate Work', left, headerTop + 14, { lineBreak: false });
       }
 
-      doc.fillColor(BRAND.blue).font('Helvetica-Bold').fontSize(9)
-        .text('AUTOMATE WORK', left + 54, y + 4, { width: contentWidth - 54 });
-      doc.fillColor(BRAND.navy).font('Helvetica-Bold').fontSize(18)
-        .text(p.title, left + 54, y + 18, { width: contentWidth - 54, lineGap: 2 });
+      const titleX = left + logoW + gap;
+      const titleW = contentWidth - logoW - gap;
+      doc.font('Helvetica-Bold').fontSize(16).fillColor(BRAND.navy);
+      const titleHeight = doc.heightOfString(p.title, { width: titleW, lineGap: 1 });
+      const titleY = headerTop + Math.max(0, (logoH - titleHeight) / 2);
+      doc.text(p.title, titleX, titleY, {
+        width: titleW,
+        lineGap: 1,
+        align: 'left',
+      });
+      headerBottom = Math.max(headerTop + logoH, doc.y);
 
-      y = Math.max(doc.y, y + 50) + 14;
+      let y = headerBottom + 12;
       doc.moveTo(left, y).lineTo(left + contentWidth, y)
-        .strokeColor(BRAND.navy).lineWidth(2.5).stroke();
-      y += 16;
+        .strokeColor(BRAND.navy).lineWidth(2).stroke();
+      y += 14;
 
       // Meta bar
-      doc.roundedRect(left, y, contentWidth, 28, 6).fill(BRAND.bg);
+      doc.roundedRect(left, y, contentWidth, 26, 5).fill(BRAND.bg);
       doc.fillColor(BRAND.muted).font('Helvetica').fontSize(9)
         .text(
           `Status: ${p.status}    ·    Version: ${p.version ?? 1}    ·    ${date}`,
-          left + 12,
-          y + 9,
-          { width: contentWidth - 24 },
+          left + 10,
+          y + 8,
+          { width: contentWidth - 20, lineBreak: false },
         );
-      y += 44;
+      y += 38;
       doc.y = y;
+
+      const ensureSpace = (needed: number) => {
+        if (doc.y + needed > pageBottom) {
+          doc.addPage();
+          doc.y = 56;
+        }
+      };
 
       const pdfSection = (title: string, content: string | undefined) => {
         if (!content?.trim()) return;
 
-        // Keep section title with some body text when possible
-        if (doc.y > doc.page.height - 120) doc.addPage();
+        ensureSpace(60);
 
         doc.font('Helvetica-Bold').fontSize(10).fillColor(BRAND.navy)
-          .text(title.toUpperCase(), left, doc.y, { width: contentWidth, characterSpacing: 0.6 });
-        const afterTitle = doc.y + 4;
-        doc.moveTo(left, afterTitle).lineTo(left + 72, afterTitle)
+          .text(title.toUpperCase(), left, doc.y, { width: contentWidth });
+        const afterTitle = doc.y + 3;
+        doc.moveTo(left, afterTitle).lineTo(left + 64, afterTitle)
           .strokeColor(BRAND.blue).lineWidth(2).stroke();
-        doc.y = afterTitle + 10;
+        doc.y = afterTitle + 8;
 
         doc.font('Helvetica').fontSize(10).fillColor(BRAND.text)
           .text(content.trim(), left, doc.y, {
             width: contentWidth,
             align: 'left',
-            lineGap: 3,
+            lineGap: 2,
           });
-        doc.moveDown(1.1);
+        doc.moveDown(0.85);
       };
 
       pdfSection('Executive Summary',  p.executiveSummary);
@@ -459,22 +469,27 @@ const renderPdf = (p: Proposal): Promise<Buffer> => {
       pdfSection('Case Studies',       p.caseStudies);
       pdfSection('Terms & Conditions', p.terms);
 
-      // Footer on every page
+      // Footers — lineBreak:false prevents PDFKit from spawning blank pages
       const range = doc.bufferedPageRange();
       for (let i = 0; i < range.count; i++) {
-        doc.switchToPage(i);
-        const footerY = doc.page.height - 36;
-        doc.moveTo(left, footerY - 8).lineTo(left + contentWidth, footerY - 8)
+        doc.switchToPage(range.start + i);
+        const footerY = doc.page.height - 40;
+        doc.save();
+        doc.moveTo(left, footerY - 6).lineTo(left + contentWidth, footerY - 6)
           .strokeColor(BRAND.border).lineWidth(0.8).stroke();
-        doc.font('Helvetica').fontSize(8).fillColor(BRAND.muted)
-          .text('Automate Work  ·  Confidential', left, footerY, {
-            width: contentWidth / 2,
-            align: 'left',
-          })
-          .text(`Page ${i + 1} of ${range.count}`, left + contentWidth / 2, footerY, {
-            width: contentWidth / 2,
-            align: 'right',
-          });
+        doc.font('Helvetica').fontSize(8).fillColor(BRAND.muted);
+        doc.text('Automate Work  ·  Confidential', left, footerY, {
+          width: contentWidth * 0.55,
+          lineBreak: false,
+          continued: false,
+        });
+        doc.text(`Page ${i + 1} of ${range.count}`, left + contentWidth * 0.55, footerY, {
+          width: contentWidth * 0.45,
+          align: 'right',
+          lineBreak: false,
+          continued: false,
+        });
+        doc.restore();
       }
 
       doc.end();

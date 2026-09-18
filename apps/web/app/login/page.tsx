@@ -40,8 +40,8 @@ function LoginForm() {
 
   const handleEmailAuth = async () => {
     setError(null); setInfo(null);
-    setError('Sign in and sign up with email is temporarily unavailable. Please use Google or another sign-in option above — we\'re sorry for the inconvenience.');
-    return;
+    setError("Sign in and sign up with email is temporarily unavailable. Please use Google or another sign-in option above — we're sorry for the inconvenience.");
+  };
 
   // ─── Resend verification email ──────────────────────────────────────────────
 

@@ -141,7 +141,9 @@ Return ONLY the JSON array, no other text.`;
 
     res.json({ leads, total: leads.length });
   } catch (error) {
-    res.status(500).json({ message: publicErrorMessage(error, 'Lead search failed. Please try again in a moment.') });
+    res.status(500).json({
+      message: publicErrorMessage(error, 'Lead search failed. Please try again in a moment.'),
+    });
   }
 });
 

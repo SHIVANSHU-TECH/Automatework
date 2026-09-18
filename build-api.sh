@@ -76,4 +76,12 @@ for svc in content-insights tranco; do
   fi
 done
 
+echo "==> Verifying AI model is not deprecated..."
+if grep -R --include='*.js' -n "llama-3.1-8b-instant" apps/api/dist >/dev/null 2>&1; then
+  echo "ERROR: deprecated model llama-3.1-8b-instant found in compiled output!"
+  grep -R --include='*.js' -n "llama-3.1-8b-instant" apps/api/dist | head -20
+  exit 1
+fi
+echo "  ok no deprecated Groq model IDs in dist"
+
 echo "==> SUCCESS"

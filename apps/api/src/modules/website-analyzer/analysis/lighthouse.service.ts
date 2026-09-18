@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import type { LighthouseScores, CoreWebVitals, LighthouseOpportunity } from '../types';
 
-const TIMEOUT_MS = 45_000; // Lighthouse can be slow on cold starts
+const TIMEOUT_MS = 45_000;
 
 // Rating thresholds
 const lcpRating = (v: number): CoreWebVitals['lcpRating'] =>
@@ -20,14 +20,34 @@ const impactFromScore = (score: number | null): LighthouseOpportunity['impact'] 
   return 'low';
 };
 
+type LhAudit = {
+  id?: string;
+  title?: string;
+  description?: string;
+  score?: number | null;
+  numericValue?: number;
+  details?: { type?: string; overallSavingsMs?: number };
+};
+
+type LhResult = {
+  lhr?: {
+    audits?: Record<string, LhAudit>;
+    categories?: Record<string, { score?: number | null }>;
+  };
+};
+
+type LighthouseFn = (
+  url: string,
+  flags?: Record<string, unknown>,
+) => Promise<LhResult | undefined>;
+
 export async function runLighthouse(url: string): Promise<{
   coreWebVitals: CoreWebVitals;
   lighthouseScores: LighthouseScores;
 } | null> {
-  let browser: ReturnType<typeof chromium.launch> extends Promise<infer T> ? T : never = null as never;
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
 
   try {
-    // Launch Chromium via Playwright (already installed)
     browser = await chromium.launch({
       args: [
         '--no-sandbox',
@@ -39,9 +59,17 @@ export async function runLighthouse(url: string): Promise<{
 
     const port = 9222 + Math.floor(Math.random() * 1000);
 
-    // We use lighthouse programmatically with the Playwright browser's CDP endpoint
+    // lighthouse v12 ESM/CJS interop — resolve callable entry without fighting package types
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const lighthouse = require('lighthouse') as typeof import('lighthouse');
+    const lighthouseMod = require('lighthouse') as LighthouseFn | { default: LighthouseFn };
+    const lighthouse: LighthouseFn =
+      typeof lighthouseMod === 'function'
+        ? lighthouseMod
+        : (lighthouseMod as { default: LighthouseFn }).default;
+
+    if (typeof lighthouse !== 'function') {
+      return null;
+    }
 
     const result = await Promise.race([
       lighthouse(url, {
@@ -55,7 +83,7 @@ export async function runLighthouse(url: string): Promise<{
         skipAudits: ['uses-http2', 'valid-source-maps'],
       }),
       new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Lighthouse timeout')), TIMEOUT_MS)
+        setTimeout(() => reject(new Error('Lighthouse timeout')), TIMEOUT_MS),
       ),
     ]);
 
@@ -63,7 +91,6 @@ export async function runLighthouse(url: string): Promise<{
 
     const lhr = result.lhr;
 
-    // ─── Core Web Vitals ────────────────────────────────────────────────────
     const getNumeric = (id: string): number | undefined => {
       const audit = lhr.audits?.[id];
       return audit?.numericValue ?? undefined;
@@ -91,35 +118,32 @@ export async function runLighthouse(url: string): Promise<{
       ttfbRating: ttfbMs !== undefined ? ttfbRating(ttfbMs) : undefined,
     };
 
-    // ─── Category scores ────────────────────────────────────────────────────
     const catScore = (cat: string): number =>
       Math.round((lhr.categories?.[cat]?.score ?? 0) * 100);
 
-    // ─── Opportunities (savings) ────────────────────────────────────────────
     const opportunities: LighthouseOpportunity[] = [];
     const diagnostics: string[] = [];
 
-    Object.values(lhr.audits ?? {}).forEach((audit) => {
-      if (!audit || audit.score === 1 || audit.score === null) return;
-      if (audit.details?.type === 'opportunity' && (audit.details as { overallSavingsMs?: number }).overallSavingsMs) {
-        const savingsMs = (audit.details as { overallSavingsMs?: number }).overallSavingsMs ?? 0;
+    Object.values(lhr.audits ?? {}).forEach((audit: LhAudit) => {
+      if (!audit || audit.score === 1 || audit.score === null || audit.score === undefined) return;
+      if (audit.details?.type === 'opportunity' && audit.details.overallSavingsMs) {
+        const savingsMs = audit.details.overallSavingsMs ?? 0;
         if (savingsMs > 200) {
           opportunities.push({
-            id: audit.id,
-            title: audit.title,
+            id: audit.id ?? 'unknown',
+            title: audit.title ?? 'Opportunity',
             description: audit.description ?? '',
             savingsMs: Math.round(savingsMs),
             impact: impactFromScore(audit.score),
           });
         }
       } else if (audit.details?.type === 'table' || audit.details?.type === 'list') {
-        if (audit.score !== null && audit.score < 0.9 && audit.title) {
+        if (audit.score < 0.9 && audit.title) {
           diagnostics.push(audit.title);
         }
       }
     });
 
-    // Sort by savings descending
     opportunities.sort((a, b) => (b.savingsMs ?? 0) - (a.savingsMs ?? 0));
 
     const scores: LighthouseScores = {
@@ -132,9 +156,8 @@ export async function runLighthouse(url: string): Promise<{
     };
 
     return { coreWebVitals: cwv, lighthouseScores: scores };
-
   } catch (err) {
-    console.error('[Lighthouse] Error:', (err as Error).message);
+    console.error('[Performance audit] Error:', (err as Error).message);
     return null;
   } finally {
     if (browser) {

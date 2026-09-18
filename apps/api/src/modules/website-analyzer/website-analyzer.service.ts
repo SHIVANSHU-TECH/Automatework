@@ -114,6 +114,7 @@ export const analyzeWebsite = async (
       crawlability: crawlability ?? null,
       contentInsights: contentInsights ?? null,
       trafficRank: trafficRank ?? null,
+      developmentInsights: analysis.developmentInsights ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -126,7 +127,7 @@ export const analyzeWebsite = async (
     ...analysis,
     coreWebVitals:   lighthouse?.coreWebVitals   ?? undefined,
     lighthouseScores: lighthouse?.lighthouseScores ?? undefined,
-    lighthouseError:  lighthouse === null ? 'Lighthouse analysis unavailable' : undefined,
+    lighthouseError:  lighthouse === null ? 'Performance audit temporarily unavailable. Other insights are still shown below.' : undefined,
     domainInfo,
     securityHeaders,
     crawlability,

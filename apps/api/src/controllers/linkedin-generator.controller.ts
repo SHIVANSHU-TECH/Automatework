@@ -91,7 +91,7 @@ Return a JSON object with exactly these fields:
 
 Return ONLY the JSON object.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
+    const aiResult = await generateAiAnalysis({ prompt });
 
     let parsed: Partial<LinkedInPost> = {};
     try {
@@ -125,7 +125,7 @@ Return ONLY the JSON object.`;
 
     res.json({ post });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Generation failed' });
+    res.status(500).json({ message: 'Generation failed. Please try again in a moment.' });
   }
 });
 
@@ -157,7 +157,7 @@ ${context}
 Return a JSON object with: headline, hook, body, ctaText, hashtags (5 items), imageSuggestions (3 items), carouselSuggestions (3 items), commentStrategy, bestPostingTime.
 Return ONLY the JSON.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
+    const aiResult = await generateAiAnalysis({ prompt });
     let parsed: Partial<LinkedInPost> = {};
     try {
       const jsonMatch = aiResult.raw.match(/\{[\s\S]*\}/);
@@ -191,7 +191,7 @@ Return ONLY the JSON.`;
 
     res.json({ post });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Failed to generate from proposal' });
+    res.status(500).json({ message: 'Failed to generate from proposal. Please try again in a moment.' });
   }
 });
 

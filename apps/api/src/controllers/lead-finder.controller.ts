@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../modules/auth/middleware';
 import { dbSet, dbGet, dbGetAll, dbRemove, paths } from '../modules/database/database';
 import { generateAiAnalysis } from '../modules/ai/ai.service';
+import { publicErrorMessage } from '../modules/logging/safe-error';
 import axios from 'axios';
 import { load } from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
@@ -85,7 +86,7 @@ For each lead, provide a JSON array with objects containing:
 
 Return ONLY the JSON array, no other text.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
+    const aiResult = await generateAiAnalysis({ prompt });
 
     let leadsData: Array<Partial<Lead>> = [];
     try {
@@ -140,7 +141,7 @@ Return ONLY the JSON array, no other text.`;
 
     res.json({ leads, total: leads.length });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Lead search failed' });
+    res.status(500).json({ message: publicErrorMessage(error, 'Lead search failed. Please try again in a moment.') });
   }
 });
 

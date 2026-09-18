@@ -2,6 +2,7 @@ import { load, type CheerioAPI } from 'cheerio';
 import dns from 'dns/promises';
 import axios from 'axios';
 import { extractContent } from '../../content-extraction/content.service';
+import { getDevelopmentInsights } from './development-insights.service';
 import type {
   CoreWebVitals,
   LighthouseScores,
@@ -10,6 +11,7 @@ import type {
   CrawlabilityInfo,
   ContentInsights,
   TrafficRank,
+  DevelopmentInsights,
 } from '../types';
 
 export type InspectionResult = {
@@ -29,6 +31,7 @@ export type InspectionResult = {
   businessCategory: string;
   detectedTechnologies: string[];
   contentExtraction: Awaited<ReturnType<typeof extractContent>>;
+  developmentInsights?: DevelopmentInsights;
 
   // V2 fields (populated by website-analyzer.service.ts via parallel calls)
   coreWebVitals?: CoreWebVitals;
@@ -414,5 +417,6 @@ export const inspectWebsite = async (html: string, url: string): Promise<Inspect
     businessCategory:     detectCategory(pageText),
     detectedTechnologies: detectTechnologies($, html),
     contentExtraction,
+    developmentInsights:  getDevelopmentInsights(html, url),
   };
 };

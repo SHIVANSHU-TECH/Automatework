@@ -20,7 +20,7 @@ interface UserStats {
 const features = [
   {
     title: 'Website Analyzer',
-    description: 'Deep crawl any website — Lighthouse scores, Core Web Vitals, SEO audit, security headers, domain info, and traffic rank in one click.',
+    description: 'Deep crawl any website — performance scores, Core Web Vitals, SEO audit, security headers, domain info, and traffic rank in one click.',
     href: '/website-analyzer',
     color: 'from-blue-500/10 to-blue-500/5 border-blue-500/20',
     iconColor: 'bg-blue-500/20 text-blue-400',
@@ -94,7 +94,7 @@ const features = [
 ];
 
 const steps = [
-  { num: '01', title: 'Analyze a Website',  desc: 'Enter any URL — Lighthouse, SEO audit, domain info, and content extracted automatically.' },
+  { num: '01', title: 'Analyze a Website',  desc: 'Enter any URL — performance audit, SEO, domain info, and content extracted automatically.' },
   { num: '02', title: 'Save to Clients',     desc: 'One click saves the site to your CRM and links the analysis to a client record.' },
   { num: '03', title: 'Generate Proposal',   desc: 'Proposal sections auto-populate. Edit, refine, and save in your private workspace.' },
   { num: '04', title: 'Export & Deliver',    desc: 'Download as PDF, Word, HTML, or Markdown. Ready to send in minutes, not days.' },
@@ -190,7 +190,7 @@ function GuestHero() {
           <span className="text-blue-400">a winning proposal</span>
         </h1>
         <p className="text-lg text-slate-300 max-w-xl mb-10 leading-relaxed">
-          Crawl a prospect&apos;s site, capture every insight automatically — Lighthouse, SEO, security, domain intelligence — and deliver a polished proposal in minutes, not days.
+          Crawl a prospect&apos;s site, capture every insight automatically — performance, SEO, security, domain intelligence — and deliver a polished proposal in minutes, not days.
         </p>
         <div className="flex flex-wrap gap-3 mb-14">
           <Link href="/login" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-blue-500 transition-colors">

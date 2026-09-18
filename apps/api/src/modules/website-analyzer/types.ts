@@ -104,6 +104,17 @@ export type TrafficRank = {
   trancoSource?: string;     // Tranco list date
 };
 
+// ─── Development / modernization insights ─────────────────────────────────────
+
+export type DevelopmentInsights = {
+  modernityScore: number;
+  freshnessLabel: 'modern' | 'aging' | 'outdated';
+  outdatedTech: string[];
+  missingEssentials: string[];
+  developmentIssues: string[];
+  recommendations: string[];
+};
+
 // ─── Full response ────────────────────────────────────────────────────────────
 
 export type WebsiteAnalyzerResponse = {
@@ -143,8 +154,9 @@ export type WebsiteAnalyzerResponse = {
   crawlability?: CrawlabilityInfo;
   contentInsights?: ContentInsights;
   trafficRank?: TrafficRank;
+  developmentInsights?: DevelopmentInsights;
 
   // Analysis metadata
   analysisTimestamp?: string;
-  lighthouseError?: string;   // if Lighthouse timed out, show error gracefully
+  lighthouseError?: string;   // performance audit unavailable (user-facing copy set in service)
 };

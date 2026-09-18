@@ -88,9 +88,15 @@ urlShortenerRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     // Also index by shortCode for redirect lookup
     await dbSet(`short_codes/${shortCode}`, { shortId, userId: req.userId, originalUrl: entry.originalUrl, password: entry.password, expiresAt: entry.expiresAt });
 
-    res.status(201).json({ shortUrl: entry });
+    res.status(201).json({
+      shortUrl: {
+        ...entry,
+        password: entry.password ? '••••••••' : undefined,
+        isProtected: Boolean(entry.password),
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Failed to create short URL' });
+    res.status(500).json({ message: 'Failed to create short URL. Please try again in a moment.' });
   }
 });
 
@@ -99,10 +105,17 @@ urlShortenerRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
 urlShortenerRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const urls = await dbGetAll<ShortUrl>(`user_data/${req.userId}/short_urls`);
-    const sorted = urls.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const sorted = urls
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(({ password, ...rest }) => ({
+        ...rest,
+        // Never return the raw password — only whether protection is enabled
+        password: password ? '••••••••' : undefined,
+        isProtected: Boolean(password),
+      }));
     res.json({ urls: sorted });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Failed to load URLs' });
+    res.status(500).json({ message: 'Failed to load URLs. Please try again in a moment.' });
   }
 });
 
@@ -135,58 +148,13 @@ urlShortenerRouter.delete('/:id', requireAuth, async (req: AuthRequest, res) => 
 });
 
 // ─── Redirect handler (public) ────────────────────────────────────────────────
+// Kept for backward compatibility; primary path is GET /s/:code in index.ts
 
 urlShortenerRouter.get('/r/:code', async (req, res) => {
-  try {
-    const code = Array.isArray(req.params.code) ? req.params.code[0] : req.params.code;
-    const index = await dbGet<{ shortId: string; userId: string; originalUrl: string; password?: string; expiresAt?: string }>(`short_codes/${code}`);
-
-    if (!index) return res.status(404).send('Short URL not found');
-
-    // Check expiry
-    if (index.expiresAt && new Date(index.expiresAt) < new Date()) {
-      return res.status(410).send('This link has expired');
-    }
-
-    // Check password
-    const provided = req.query.p as string | undefined;
-    if (index.password && provided !== index.password) {
-      return res.status(401).send(`<html><body><form method="get"><input name="p" type="password" placeholder="Enter password"/><button>Go</button></form></body></html>`);
-    }
-
-    // Track click
-    const clickEvent: ClickEvent = {
-      timestamp: new Date().toISOString(),
-      country:   (req.headers['cf-ipcountry'] as string) ?? 'Unknown',
-      device:    /mobile/i.test(req.headers['user-agent'] ?? '') ? 'Mobile' : 'Desktop',
-      browser:   /chrome/i.test(req.headers['user-agent'] ?? '') ? 'Chrome' :
-                 /firefox/i.test(req.headers['user-agent'] ?? '') ? 'Firefox' :
-                 /safari/i.test(req.headers['user-agent'] ?? '') ? 'Safari' : 'Other',
-      os:        /windows/i.test(req.headers['user-agent'] ?? '') ? 'Windows' :
-                 /mac/i.test(req.headers['user-agent'] ?? '') ? 'macOS' :
-                 /linux/i.test(req.headers['user-agent'] ?? '') ? 'Linux' :
-                 /android/i.test(req.headers['user-agent'] ?? '') ? 'Android' :
-                 /ios|iphone|ipad/i.test(req.headers['user-agent'] ?? '') ? 'iOS' : 'Other',
-      referrer:  req.headers.referer ?? 'Direct',
-    };
-
-    // Update analytics in Firestore (fire and forget — don't block redirect)
-    dbGet<ShortUrl>(`user_data/${index.userId}/short_urls/${index.shortId}`).then((existing) => {
-      if (existing) {
-        const updated = {
-          ...existing,
-          totalClicks: existing.totalClicks + 1,
-          analytics: [...(existing.analytics ?? []).slice(-999), clickEvent],
-          updatedAt: new Date().toISOString(),
-        };
-        dbSet(`user_data/${index.userId}/short_urls/${index.shortId}`, updated).catch(() => {});
-      }
-    }).catch(() => {});
-
-    res.redirect(302, index.originalUrl);
-  } catch (error) {
-    res.status(500).send('Redirect error');
-  }
+  // Forward to the same resolver behaviour via absolute redirect to /s/:code
+  const code = Array.isArray(req.params.code) ? req.params.code[0] : req.params.code;
+  const qs = req.query.p ? `?p=${encodeURIComponent(String(req.query.p))}` : '';
+  return res.redirect(302, `/s/${encodeURIComponent(code)}${qs}`);
 });
 
 // ─── Analytics summary ────────────────────────────────────────────────────────

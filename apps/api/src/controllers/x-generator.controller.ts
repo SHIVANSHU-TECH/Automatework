@@ -74,7 +74,7 @@ Return a JSON object with exactly these fields:
 
 Return ONLY the JSON object.`;
 
-    const aiResult = await generateAiAnalysis({ prompt, model: 'llama-3.1-8b-instant' });
+    const aiResult = await generateAiAnalysis({ prompt });
 
     let parsed: Partial<XPost> = {};
     try {
@@ -101,7 +101,7 @@ Return ONLY the JSON object.`;
 
     res.json({ post });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Generation failed' });
+    res.status(500).json({ message: 'Generation failed. Please try again in a moment.' });
   }
 });
 

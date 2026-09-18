@@ -5,7 +5,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://automatework-tmfr.o
 /**
  * GET /s/[code]
  * Proxies the short-link redirect through the web domain.
- * The API handles click tracking and returns a 302 to the original URL.
+ * Calls the API /s/:code endpoint which returns a 302 or HTML status page.
  */
 export async function GET(
   request: NextRequest,
@@ -17,7 +17,6 @@ export async function GET(
   const apiUrl = `${API_BASE}/s/${encodeURIComponent(code)}${password ? `?p=${encodeURIComponent(password)}` : ''}`;
 
   try {
-    // Follow the redirect from the API and get the final destination
     const res = await fetch(apiUrl, {
       redirect: 'manual',
       headers: {
@@ -28,42 +27,35 @@ export async function GET(
       },
     });
 
-    // Password-protected — return HTML form
-    if (res.status === 401) {
-      const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Protected Link</title>
-        <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;margin:0}
-        .box{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;max-width:360px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.08)}
-        h2{margin:0 0 8px;font-size:18px;color:#1e293b}p{color:#64748b;font-size:14px;margin:0 0 20px}
-        input{width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:12px}
-        button{width:100%;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}</style>
-        </head><body><div class="box"><h2>Protected Link</h2><p>This link is password-protected.</p>
-        <form method="get"><input name="p" type="password" placeholder="Enter password" autofocus/><button type="submit">Open Link</button></form></div></body></html>`;
-      return new NextResponse(html, { status: 401, headers: { 'Content-Type': 'text/html' } });
+    // Password / expired / not-found HTML from API — pass through
+    if (res.status === 401 || res.status === 410 || res.status === 404) {
+      const html = await res.text();
+      if (html.includes('<html') || html.includes('<!DOCTYPE')) {
+        return new NextResponse(html, {
+          status: res.status,
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        });
+      }
+      if (res.status === 404) {
+        return NextResponse.redirect(new URL('/?error=link_not_found', request.url));
+      }
     }
 
-    // Expired
-    if (res.status === 410) {
-      const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Link Expired</title>
-        <style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f8fafc;margin:0}
-        .box{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;max-width:360px;width:100%;text-align:center}
-        h2{color:#dc2626}p{color:#64748b;font-size:14px}</style>
-        </head><body><div class="box"><h2>Link Expired</h2><p>This short link has expired and is no longer available.</p></div></body></html>`;
-      return new NextResponse(html, { status: 410, headers: { 'Content-Type': 'text/html' } });
-    }
-
-    // Not found
-    if (res.status === 404) {
-      return NextResponse.redirect(new URL('/?error=link_not_found', request.url));
-    }
-
-    // Successful redirect — forward the Location header
+    // Successful redirect — resolve relative Location against the API origin
     const location = res.headers.get('location');
     if (location) {
-      return NextResponse.redirect(location, 302);
+      const absolute = location.startsWith('http')
+        ? location
+        : new URL(location, API_BASE).toString();
+      return NextResponse.redirect(absolute, 302);
     }
 
     return NextResponse.redirect(new URL('/', request.url));
   } catch {
-    return NextResponse.redirect(new URL('/', request.url));
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Temporarily Unavailable</title>
+      <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8fafc}
+      .box{text-align:center;max-width:360px;padding:24px}h2{color:#1e293b}p{color:#64748b;font-size:14px}</style></head>
+      <body><div class="box"><h2>Temporarily Unavailable</h2><p>Please try again in a moment.</p></div></body></html>`;
+    return new NextResponse(html, { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 }

@@ -92,6 +92,15 @@ interface TrafficRank {
   trancoSource?: string;
 }
 
+interface DevelopmentInsights {
+  modernityScore: number;
+  freshnessLabel: 'modern' | 'aging' | 'outdated';
+  outdatedTech: string[];
+  missingEssentials: string[];
+  developmentIssues: string[];
+  recommendations: string[];
+}
+
 interface AnalysisResult {
   framework?: string;
   cms?: string;
@@ -128,6 +137,7 @@ interface AnalysisResult {
   crawlability?: CrawlabilityInfo;
   contentInsights?: ContentInsights;
   trafficRank?: TrafficRank;
+  developmentInsights?: DevelopmentInsights;
   analysisTimestamp?: string;
 }
 
@@ -224,13 +234,13 @@ function ratingLabel(r?: string) {
   return 'Poor';
 }
 
-// ─── Lighthouse section ───────────────────────────────────────────────────────
+// ─── Performance audit section (scores from site crawl) ───────────────────────
 
-function LighthouseSection({ scores, cwv, error }: { scores?: LighthouseScores; cwv?: CoreWebVitals; error?: string }) {
+function PerformanceAuditSection({ scores, cwv, error }: { scores?: LighthouseScores; cwv?: CoreWebVitals; error?: string }) {
   if (error && !scores) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-1 text-sm font-semibold text-slate-800">Lighthouse Analysis</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-800">Performance Audit</h3>
         <p className="text-xs text-slate-400">{error}</p>
       </div>
     );
@@ -251,7 +261,7 @@ function LighthouseSection({ scores, cwv, error }: { scores?: LighthouseScores; 
     <div className="space-y-4">
       {/* Score rings */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="mb-4 text-sm font-semibold text-slate-800">Lighthouse Scores</h3>
+        <h3 className="mb-4 text-sm font-semibold text-slate-800">Site Quality Scores</h3>
         <div className="flex flex-wrap gap-6 justify-around">
           {cats.map(c => <ScoreRing key={c.label} score={c.score} label={c.label} />)}
         </div>
@@ -296,7 +306,7 @@ function LighthouseSection({ scores, cwv, error }: { scores?: LighthouseScores; 
       {/* Opportunities */}
       {scores.opportunities.length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-3 text-sm font-semibold text-slate-800">Lighthouse Opportunities</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-800">Performance Opportunities</h3>
           <div className="space-y-2">
             {scores.opportunities.map((o, i) => (
               <div key={i} className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 border border-slate-200 p-3">
@@ -313,6 +323,66 @@ function LighthouseSection({ scores, cwv, error }: { scores?: LighthouseScores; 
               </div>
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Development / modernization insights ─────────────────────────────────────
+
+function DevelopmentInsightsSection({ insights }: { insights?: DevelopmentInsights }) {
+  if (!insights) return null;
+  const labelMap = {
+    modern:   { text: 'Modern',   cls: 'bg-green-100 text-green-700 border-green-200' },
+    aging:    { text: 'Aging',    cls: 'bg-amber-100 text-amber-700 border-amber-200' },
+    outdated: { text: 'Outdated', cls: 'bg-red-100 text-red-700 border-red-200' },
+  } as const;
+  const badge = labelMap[insights.freshnessLabel];
+  const scoreColor = insights.modernityScore >= 70 ? 'text-green-600' : insights.modernityScore >= 45 ? 'text-amber-600' : 'text-red-600';
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800">Website Health & Development</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Beyond SEO — freshness, missing pieces, and engineering debt that hurt conversion.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${badge.cls}`}>{badge.text}</span>
+          <div className="text-center">
+            <p className={`text-2xl font-black ${scoreColor}`}>{insights.modernityScore}</p>
+            <p className="text-[10px] text-slate-500">Modernity</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Outdated Technology</p>
+          <IssueList items={insights.outdatedTech} emptyText="No legacy stack signals ✓" />
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-2">What&apos;s Missing</p>
+          <IssueList items={insights.missingEssentials} emptyText="Core essentials present ✓" />
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 mb-2">Development Issues</p>
+          <IssueList items={insights.developmentIssues} emptyText="No major engineering flags ✓" />
+        </div>
+      </div>
+
+      {insights.recommendations.length > 0 && (
+        <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 mb-2">Recommended Focus</p>
+          <ul className="space-y-1.5">
+            {insights.recommendations.map((r, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-slate-700">
+                <span className="mt-0.5 text-blue-500 shrink-0">→</span>
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
@@ -513,8 +583,9 @@ function TrafficRankSection({ rank }: { rank?: TrafficRank }) {
 interface Problem {
   issue: string;
   impact: 'high' | 'medium' | 'low';
+  category: 'seo' | 'development' | 'ux' | 'security';
   solution: string;
-  seoTip: string;
+  tip: string;
 }
 
 function buildProblems(r: AnalysisResult): Problem[] {
@@ -523,55 +594,56 @@ function buildProblems(r: AnalysisResult): Problem[] {
   r.seoIssues.forEach(issue => {
     const lower = issue.toLowerCase();
     let solution = 'Review and fix this SEO issue to improve search engine visibility.';
-    let seoTip = 'Addressing this will help search engines better understand your page.';
+    let tip = 'Addressing this will help search engines better understand your page.';
     if (lower.includes('meta description') || lower.includes('missing meta')) {
       solution = 'Add a unique meta description (150–160 characters) to every page that summarises the content and includes a target keyword.';
-      seoTip = 'Meta descriptions directly influence click-through rates in search results. A compelling description can significantly increase organic traffic.';
+      tip = 'Meta descriptions directly influence click-through rates in search results.';
     } else if (lower.includes('title') || lower.includes('missing title')) {
       solution = 'Set a descriptive <title> tag (50–60 characters) on every page including your primary keyword near the beginning.';
-      seoTip = 'Page titles are one of the strongest on-page SEO signals. Missing or duplicate titles cause ranking issues.';
+      tip = 'Page titles are one of the strongest on-page ranking signals.';
     } else if (lower.includes('h1') || lower.includes('heading')) {
       solution = 'Ensure each page has exactly one H1 tag containing the primary keyword. Use H2–H6 tags to create a logical content hierarchy.';
-      seoTip = 'A proper heading structure helps search engines parse content relevance and improves readability for users.';
+      tip = 'A proper heading structure helps search engines and improves readability.';
     } else if (lower.includes('canonical')) {
       solution = 'Add canonical tags to indicate the preferred version of each URL and prevent duplicate content penalties.';
-      seoTip = 'Canonical tags are essential for sites with similar or duplicate content spread across multiple URLs.';
+      tip = 'Canonical tags matter when similar content exists across multiple URLs.';
     } else if (lower.includes('robots') || lower.includes('noindex')) {
       solution = 'Review your robots.txt and meta robots tags. Ensure important pages are not accidentally blocked from indexing.';
-      seoTip = 'Accidentally blocking pages with noindex or disallow rules can remove them from search results entirely.';
+      tip = 'Accidentally blocking pages can remove them from search results entirely.';
     } else if (lower.includes('alt') || lower.includes('image')) {
       solution = 'Add descriptive alt attributes to all images. Include relevant keywords naturally without keyword stuffing.';
-      seoTip = 'Alt text helps search engines index images and improves accessibility, which is a ranking factor.';
+      tip = 'Alt text helps image indexing and accessibility.';
     }
-    problems.push({ issue, impact: 'high', solution, seoTip });
+    problems.push({ issue, impact: 'high', category: 'seo', solution, tip });
   });
 
   r.accessibilityIssues.forEach(issue => {
     const lower = issue.toLowerCase();
     let solution = 'Fix this accessibility issue to improve usability for all users.';
-    let seoTip = 'Accessibility improvements often align with SEO best practices and can improve rankings.';
+    let tip = 'Accessibility improvements often align with better UX and conversion.';
     if (lower.includes('alt') || lower.includes('image')) {
       solution = 'Add descriptive alt text to all images. Decorative images should use alt="".';
-      seoTip = 'Proper alt text improves both accessibility and image SEO, helping your images rank in Google Images.';
+      tip = 'Proper alt text improves accessibility and image discoverability.';
     } else if (lower.includes('link') || lower.includes('anchor')) {
       solution = 'Give all links descriptive text. Replace "click here" with meaningful phrases describing the destination.';
-      seoTip = 'Descriptive anchor text helps search engines understand what the linked page is about and passes more relevant link equity.';
+      tip = 'Descriptive anchors help users and assistive tech understand destinations.';
     } else if (lower.includes('label') || lower.includes('form') || lower.includes('input')) {
       solution = 'Associate every form input with a visible <label> element using the for/id attribute pair.';
-      seoTip = 'Well-labeled forms improve user engagement, reducing form abandonment and improving conversion signals.';
+      tip = 'Well-labeled forms reduce abandonment and increase conversions.';
     } else if (lower.includes('button') || lower.includes('type')) {
       solution = 'Add type="button", type="submit", or type="reset" to all <button> elements to define their intended behaviour.';
-      seoTip = 'Properly functioning interactive elements improve user experience, reducing bounce rate.';
+      tip = 'Reliable interactive elements reduce bounce and frustration.';
     }
-    problems.push({ issue, impact: 'medium', solution, seoTip });
+    problems.push({ issue, impact: 'medium', category: 'ux', solution, tip });
   });
 
   if (!r.sslValid) {
     problems.push({
       issue: 'No SSL certificate (HTTP)',
       impact: 'high',
+      category: 'security',
       solution: "Install an SSL certificate (free via Let's Encrypt) and redirect all HTTP traffic to HTTPS.",
-      seoTip: 'HTTPS is a confirmed Google ranking factor. Non-HTTPS sites are marked as "Not Secure" in browsers, reducing user trust and click-through rates.',
+      tip: 'Browsers mark non-HTTPS sites as "Not Secure", which damages trust and conversions.',
     });
   }
 
@@ -579,8 +651,9 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: 'Not mobile responsive',
       impact: 'high',
-      solution: "Implement a responsive design using CSS media queries or a mobile-first framework. Test with Google's Mobile-Friendly Test tool.",
-      seoTip: 'Google uses mobile-first indexing, meaning the mobile version of your site is the primary version used for ranking.',
+      category: 'development',
+      solution: 'Implement a responsive design using CSS media queries or a mobile-first framework.',
+      tip: 'Most traffic is mobile — a non-responsive site loses a large share of visitors.',
     });
   }
 
@@ -588,15 +661,17 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: `Low performance score (${r.performanceScore}/100)`,
       impact: 'high',
-      solution: 'Run a Lighthouse audit, compress images, remove render-blocking resources, enable lazy loading, and use a CDN.',
-      seoTip: 'Core Web Vitals (LCP, CLS, FID) are Google ranking factors. A score below 50 significantly hurts search rankings.',
+      category: 'development',
+      solution: 'Compress images, remove render-blocking resources, enable lazy loading, and use a CDN.',
+      tip: 'Slow pages increase bounce rates and reduce lead capture.',
     });
   } else if ((r.performanceScore ?? 100) < 70) {
     problems.push({
       issue: `Performance needs improvement (${r.performanceScore}/100)`,
       impact: 'medium',
+      category: 'development',
       solution: 'Optimise images to WebP, defer non-critical JavaScript, and enable browser caching headers.',
-      seoTip: 'Improving performance from 50–70 range to 90+ can move pages up several positions in search results.',
+      tip: 'Moving from the 50–70 range toward 90+ improves engagement and rankings.',
     });
   }
 
@@ -604,8 +679,9 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: `${r.brokenLinks.length} broken link${r.brokenLinks.length > 1 ? 's' : ''} detected`,
       impact: 'medium',
-      solution: 'Fix or remove all broken links. Set up 301 redirects for moved content and regularly audit links with a crawl tool.',
-      seoTip: 'Broken links create a poor user experience and waste crawl budget. Google may lower the trust score of pages with many broken links.',
+      category: 'ux',
+      solution: 'Fix or remove all broken links. Set up 301 redirects for moved content and regularly audit links.',
+      tip: 'Broken links waste crawl budget and frustrate users mid-journey.',
     });
   }
 
@@ -613,8 +689,9 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: 'No contact information found',
       impact: 'low',
-      solution: 'Add a visible contact page with phone, email, and physical address. Include schema.org LocalBusiness markup.',
-      seoTip: 'Contact information signals trustworthiness (E-E-A-T) to Google. Local businesses especially benefit from NAP consistency.',
+      category: 'ux',
+      solution: 'Add a visible contact page with phone, email, and physical address where relevant.',
+      tip: 'Clear contact paths build trust and make it easier for buyers to reach you.',
     });
   }
 
@@ -622,8 +699,9 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: `Security headers score low (${r.securityHeaders.score}/100)`,
       impact: 'medium',
+      category: 'security',
       solution: `Add missing headers: ${r.securityHeaders.missing.join(', ')}. Configure these in your web server or CDN settings.`,
-      seoTip: 'Security headers protect users and signal trustworthiness to Google, which is a factor in E-E-A-T evaluations.',
+      tip: 'Security headers protect visitors and signal a professionally maintained site.',
     });
   }
 
@@ -631,8 +709,9 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: 'No XML sitemap found',
       impact: 'medium',
+      category: 'seo',
       solution: 'Create an XML sitemap and submit it to Google Search Console. Most CMS platforms can generate one automatically.',
-      seoTip: 'A sitemap speeds up indexing and ensures all pages are discoverable by search engines.',
+      tip: 'A sitemap speeds up indexing and ensures all pages are discoverable.',
     });
   }
 
@@ -640,8 +719,61 @@ function buildProblems(r: AnalysisResult): Problem[] {
     problems.push({
       issue: `Thin content (${r.contentInsights.wordCount} words)`,
       impact: 'medium',
+      category: 'seo',
       solution: 'Expand page content to at least 500–800 words. Add more detailed descriptions, FAQs, or supporting information.',
-      seoTip: 'Google considers thin content a quality issue. Pages with less than 300 words often rank poorly for competitive keywords.',
+      tip: 'Thin pages rarely win competitive keywords or convert informed buyers.',
+    });
+  }
+
+  // Development / modernization (beyond SEO)
+  const d = r.developmentInsights;
+  if (d) {
+    if (d.freshnessLabel === 'outdated') {
+      problems.push({
+        issue: 'Website appears outdated overall',
+        impact: 'high',
+        category: 'development',
+        solution: 'Plan a staged redesign or rebuild: modern stack, refreshed visuals, clearer conversion paths, and current branding.',
+        tip: 'An outdated site quietly loses trust — visitors compare you to newer competitors within seconds.',
+      });
+    } else if (d.freshnessLabel === 'aging') {
+      problems.push({
+        issue: 'Website shows aging design / tech signals',
+        impact: 'medium',
+        category: 'development',
+        solution: 'Modernise key landing pages, update the visual system, and retire legacy libraries.',
+        tip: 'Incremental modernization often recovers conversions before a full rebuild is needed.',
+      });
+    }
+
+    d.outdatedTech.forEach(tech => {
+      problems.push({
+        issue: `Outdated technology: ${tech}`,
+        impact: 'high',
+        category: 'development',
+        solution: `Replace or upgrade ${tech} with a supported alternative and remove unused legacy scripts.`,
+        tip: 'Legacy libraries increase security risk and make future changes slower and costlier.',
+      });
+    });
+
+    d.missingEssentials.forEach(item => {
+      problems.push({
+        issue: `Missing: ${item}`,
+        impact: 'medium',
+        category: 'development',
+        solution: `Add ${item.toLowerCase()} as part of a focused website improvement sprint.`,
+        tip: 'Missing essentials reduce trust, trackability, and conversion readiness.',
+      });
+    });
+
+    d.developmentIssues.slice(0, 6).forEach(issue => {
+      problems.push({
+        issue,
+        impact: 'medium',
+        category: 'development',
+        solution: 'Address this engineering debt during the next maintenance or redesign cycle.',
+        tip: 'Cleaner engineering foundations make every later marketing change cheaper.',
+      });
     });
   }
 
@@ -660,12 +792,18 @@ function ProblemsSection({ result }: { result: AnalysisResult }) {
   const high   = problems.filter(p => p.impact === 'high');
   const medium = problems.filter(p => p.impact === 'medium');
   const low    = problems.filter(p => p.impact === 'low');
+  const categoryLabel: Record<Problem['category'], string> = {
+    seo: 'SEO',
+    development: 'Development',
+    ux: 'UX',
+    security: 'Security',
+  };
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-sm font-semibold text-slate-800">Website Problems & Solutions</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Identified issues with actionable fixes and SEO improvement tips.</p>
+          <p className="text-xs text-slate-500 mt-0.5">SEO, development, UX, and security issues with actionable fixes.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {high.length   > 0 && <span className="rounded-full bg-red-100 text-red-700 text-xs font-medium px-2.5 py-0.5">{high.length} High</span>}
@@ -684,6 +822,7 @@ function ProblemsSection({ result }: { result: AnalysisResult }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-slate-800">{p.issue}</p>
                     <span className={`text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 ${cfg.badge}`}>{cfg.label}</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide rounded-full px-2 py-0.5 bg-white/80 text-slate-600 border border-slate-200">{categoryLabel[p.category]}</span>
                   </div>
                   <div className="mt-2 space-y-1.5">
                     <div>
@@ -691,8 +830,8 @@ function ProblemsSection({ result }: { result: AnalysisResult }) {
                       <p className="text-xs text-slate-700 leading-relaxed">{p.solution}</p>
                     </div>
                     <div className="rounded-lg bg-white/70 border border-blue-100 px-3 py-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 mb-0.5">SEO Impact</p>
-                      <p className="text-xs text-slate-600 leading-relaxed">{p.seoTip}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 mb-0.5">Why it matters</p>
+                      <p className="text-xs text-slate-600 leading-relaxed">{p.tip}</p>
                     </div>
                   </div>
                 </div>
@@ -805,7 +944,7 @@ export default function WebsiteAnalyzerPage() {
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="page-header">
           <h1 className="text-2xl font-bold text-slate-900">Website Analyzer</h1>
-          <p className="mt-1 text-sm text-slate-500">Crawl any website and extract technology, SEO, performance, Lighthouse, and content insights.</p>
+          <p className="mt-1 text-sm text-slate-500">Crawl any website and extract technology, SEO, performance, and content insights.</p>
         </div>
 
         {/* URL input */}
@@ -830,13 +969,13 @@ export default function WebsiteAnalyzerPage() {
             </button>
           </div>
           {loading && (
-            <p className="mt-2 text-xs text-slate-400">Running Lighthouse, WHOIS, security headers, and Tranco rank lookup — this may take 30–60 seconds.</p>
+            <p className="mt-2 text-xs text-slate-400">Running performance audit, WHOIS, security headers, and traffic rank lookup — this may take 30–60 seconds.</p>
           )}
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">
-            <strong>Error:</strong> {error}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
+            {error}
           </div>
         )}
 
@@ -906,10 +1045,10 @@ export default function WebsiteAnalyzerPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               {[
                 { label: 'SEO Issues',       value: result.seoIssues.length,           color: result.seoIssues.length > 0 ? 'text-red-600' : 'text-green-600' },
+                { label: 'Dev Issues',       value: (result.developmentInsights?.developmentIssues.length ?? 0) + (result.developmentInsights?.outdatedTech.length ?? 0) + (result.developmentInsights?.missingEssentials.length ?? 0), color: ((result.developmentInsights?.modernityScore ?? 100) < 70) ? 'text-amber-600' : 'text-green-600' },
                 { label: 'Accessibility',    value: result.accessibilityIssues.length, color: result.accessibilityIssues.length > 0 ? 'text-amber-600' : 'text-green-600' },
                 { label: 'Broken Links',     value: result.brokenLinks.length,         color: result.brokenLinks.length > 0 ? 'text-red-600' : 'text-green-600' },
                 { label: 'Technologies',     value: result.detectedTechnologies.length, color: 'text-blue-600' },
-                { label: 'Content Sections', value: [result.contentExtraction.headings, result.contentExtraction.services, result.contentExtraction.ctas, result.contentExtraction.pricing, result.contentExtraction.navigation, result.contentExtraction.forms].filter(a => a.length > 0).length, color: 'text-indigo-600' },
               ].map(s => (
                 <div key={s.label} className="card flex flex-col gap-0.5 py-3 items-center text-center">
                   <span className={`text-2xl font-black ${s.color}`}>{s.value}</span>
@@ -918,8 +1057,11 @@ export default function WebsiteAnalyzerPage() {
               ))}
             </div>
 
-            {/* Lighthouse + Core Web Vitals */}
-            <LighthouseSection scores={result.lighthouseScores} cwv={result.coreWebVitals} error={result.lighthouseError} />
+            {/* Performance audit + Core Web Vitals */}
+            <PerformanceAuditSection scores={result.lighthouseScores} cwv={result.coreWebVitals} error={result.lighthouseError} />
+
+            {/* Development / modernization */}
+            <DevelopmentInsightsSection insights={result.developmentInsights} />
 
             {/* Domain + Traffic rank */}
             <div className="grid gap-4 sm:grid-cols-2">
@@ -993,9 +1135,14 @@ function buildExecutiveSummary(r: AnalysisResult, url: string): string {
   const name  = r.contentExtraction?.metadata?.title || url;
   const techs = r.detectedTechnologies.slice(0, 3).join(', ') || 'standard web technologies';
   const issues = [...r.seoIssues, ...r.accessibilityIssues].length;
+  const modernity = r.developmentInsights?.freshnessLabel;
+  const freshnessNote =
+    modernity === 'outdated' ? ' The site also shows clear signs of needing modernization.' :
+    modernity === 'aging' ? ' Several areas look dated and would benefit from a focused refresh.' : '';
   return `${name} is a ${r.businessCategory} website built on ${techs}. ` +
-    `Our analysis identified ${issues} improvement opportunities across SEO, accessibility, and performance. ` +
-    `This proposal outlines our recommended approach to modernise and optimise the platform.`;
+    `Our analysis identified ${issues} improvement opportunities across SEO, accessibility, performance, and development.` +
+    freshnessNote +
+    ` This proposal outlines our recommended approach to modernise and optimise the platform.`;
 }
 
 function buildScope(r: AnalysisResult): string {
@@ -1005,6 +1152,15 @@ function buildScope(r: AnalysisResult): string {
   if (!r.isMobileResponsive)        lines.push('• Mobile responsiveness implementation');
   if ((r.performanceScore ?? 100) < 60) lines.push('• Performance optimisation (current score: ' + r.performanceScore + '/100)');
   if (r.brokenLinks.length)         lines.push(`• Fix ${r.brokenLinks.length} broken link(s)`);
+  if (r.developmentInsights?.outdatedTech.length) {
+    lines.push(`• Modernise outdated technology: ${r.developmentInsights.outdatedTech.join(', ')}`);
+  }
+  if (r.developmentInsights?.missingEssentials.length) {
+    lines.push(`• Add missing essentials: ${r.developmentInsights.missingEssentials.slice(0, 4).join(', ')}`);
+  }
+  if (r.developmentInsights?.freshnessLabel === 'outdated') {
+    lines.push('• Website redesign / modernization sprint');
+  }
   if (!lines.length)                lines.push('• General website audit and optimisation');
   return lines.join('\n');
 }

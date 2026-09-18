@@ -214,8 +214,13 @@ export default function ProposalDetailPage() {
     if (!proposal) return;
     setGeneratingShare(true); setError(null);
     try {
-      const sourceUrl = (proposal.metadata?.sourceUrl as string | undefined) ?? '';
-      const longUrl = sourceUrl.startsWith('http') ? sourceUrl : `${apiUrl}/proposals/${id}`;
+      // Always share the proposal page on the web app — never the API/Render host
+      // (opening https://…onrender.com/proposals/… shows a raw "Cannot GET" page).
+      const webBase =
+        typeof window !== 'undefined'
+          ? window.location.origin
+          : (process.env.NEXT_PUBLIC_APP_URL ?? 'https://automatework-web.vercel.app');
+      const longUrl = `${webBase}/proposals/${id}`;
       const data = await fetchJson<{ shortUrl: { shortUrl: string; qrCode?: string; shortId: string } }>('/api/urls', {
         method: 'POST',
         body: JSON.stringify({

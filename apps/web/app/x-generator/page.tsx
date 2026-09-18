@@ -142,7 +142,7 @@ export default function XGeneratorPage() {
           </div>
         </div>
 
-        {error   && <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700">{error}</div>}
+        {error   && <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">{error}</div>}
         {message && <div className="rounded-xl border border-green-200 bg-green-50 px-5 py-3 text-sm text-green-700 font-medium">✓ {message}</div>}
 
         {tab === 'generate' && (

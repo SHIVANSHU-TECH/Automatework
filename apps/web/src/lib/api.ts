@@ -6,6 +6,20 @@ export const apiUrl =
     ? 'https://automatework-tmfr.onrender.com'
     : 'http://localhost:4000');
 
+const FRIENDLY =
+  'Something went wrong. Please try again in a moment.';
+
+const looksTechnical = (msg: string) =>
+  /api[_-]?key|gsk_|Bearer |model_not_found|invalid_request|GROQ|AIza|llama-|gpt-oss|openai\/|\{[\s\S]*"error"|^\d{3}\s|ECONN|ETIMEDOUT|stack|TypeError|AxiosError/i.test(
+    msg,
+  );
+
+export const toUserMessage = (raw?: string, fallback = FRIENDLY): string => {
+  if (!raw?.trim()) return fallback;
+  if (looksTechnical(raw) || raw.length > 180) return fallback;
+  return raw;
+};
+
 export const fetchJson = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -14,7 +28,12 @@ export const fetchJson = async <T>(path: string, options?: RequestInit): Promise
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const response = await fetch(`${apiUrl}${path}`, { ...options, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}${path}`, { ...options, headers });
+  } catch {
+    throw new Error(FRIENDLY);
+  }
 
   if (response.status === 401) {
     clearToken();
@@ -23,8 +42,8 @@ export const fetchJson = async <T>(path: string, options?: RequestInit): Promise
   }
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body?.message ?? 'API request failed');
+    const body = await response.json().catch(() => ({} as { message?: string }));
+    throw new Error(toUserMessage(body?.message, FRIENDLY));
   }
 
   return response.json();
@@ -37,7 +56,7 @@ export const exchangeFirebaseToken = async (idToken: string): Promise<{ token: s
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idToken }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? 'Auth exchange failed');
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(toUserMessage(data.message, 'Sign-in failed. Please try again.'));
   return { token: data.token, email: data.email };
 };

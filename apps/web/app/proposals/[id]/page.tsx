@@ -50,10 +50,9 @@ const FORMATS = [
     label: 'PDF',
     desc: 'A4 document',
     icon: (
-      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="#E5252A" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-        <path fill="#B71C1C" d="M14 2v6h6"/>
-        <path fill="#fff" d="M8.2 17.2c.2-.9.6-1.7 1.2-2.4.4-.4.8-.7 1.3-.9-.3-.5-.5-1-.6-1.6-.1-.5 0-1 .3-1.4.2-.3.5-.5.9-.5.4 0 .7.2.9.6.2.5.2 1.1 0 1.8-.1.4-.3.8-.5 1.2.5.2 1 .6 1.4 1.1.6.7 1 1.5 1.2 2.4h-1.3c-.1-.5-.4-1-.8-1.4-.3-.3-.7-.6-1.1-.7-.4.2-.8.5-1.1.8-.4.4-.7.9-.8 1.4H8.2zm2.6-5.6c.1-.3.1-.6 0-.8 0-.1-.1-.1-.2-.1s-.2.1-.2.2c-.1.2 0 .5.1.9.1-.1.2-.2.3-.2z"/>
+      <svg className="h-4 w-4 shrink-0 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14 3v5h5M9 13h6M9 17h4"/>
       </svg>
     ),
   },
@@ -62,10 +61,9 @@ const FORMATS = [
     label: 'Word',
     desc: '.docx file',
     icon: (
-      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="#185ABD" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
-        <path fill="#103F91" d="M14 2v6h6"/>
-        <path fill="#fff" d="M7.6 16.8 9.1 9.5h1.5l1 4.7 1-4.7h1.5l1.5 7.3h-1.5l-.9-4.6-1 4.6H11l-1-4.6-.9 4.6H7.6z"/>
+      <svg className="h-4 w-4 shrink-0 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 3h7l5 5v13a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14 3v5h5M8.5 16l1.2-5h1.1l1.1 3.8L13.1 11h1.1l1.2 5H14l-.7-3.2L12.2 16h-.9l-1.1-3.2L9.5 16H8.5z"/>
       </svg>
     ),
   },
@@ -74,11 +72,8 @@ const FORMATS = [
     label: 'HTML',
     desc: 'web page',
     icon: (
-      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="#E44D26" d="M4 2h16l-1.5 17L12 22l-6.5-3L4 2z"/>
-        <path fill="#F16529" d="M12 21.2 17.2 19.7 18.5 4.5H12V21.2z"/>
-        <path fill="#EBEBEB" d="M12 10.2H9.2l-.2-1.8H12V6.6H7.1l.5 5.4H12v-1.8zm0 5.5-.1-.1-2.8-.8-.2-1.8H7.1l.3 3.6L12 17.5v-1.8z"/>
-        <path fill="#fff" d="M12 10.2v1.8h2.7l-.3 2.6-2.4.7v1.9l4.1-1.1.4-4.1.1-1.8H12z"/>
+      <svg className="h-4 w-4 shrink-0 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 8l-4 4 4 4M16 8l4 4-4 4M13 5l-2 14"/>
       </svg>
     ),
   },
@@ -87,14 +82,27 @@ const FORMATS = [
     label: 'Markdown',
     desc: '.md file',
     icon: (
-      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="16" rx="2" fill="#0B132B"/>
-        <path fill="#fff" d="M6.5 15.5V8.5h1.6l1.5 2.4 1.5-2.4H12.7v7h-1.5V10.8L9.6 13.4H9L7.9 10.8v4.7H6.5zm8.2 0-2.4-3h1.6V8.5h1.5v4h1.6l-2.3 3z"/>
+      <svg className="h-4 w-4 shrink-0 text-slate-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 15V9h1.2L10 12l1.8-3H13v6h-1.3V11L10.4 14H9.6L8.3 11v4H7zm7 0l2-2.5V9h1.3v3.5L19.3 15H17.8l-1.1-1.5L15.6 15H14z"/>
       </svg>
     ),
   },
 ];
 
+const IconSave = (
+  <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z"/>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17 3v4H7V3M7 21v-8h10v8"/>
+  </svg>
+);
+
+const IconGlobe = (
+  <svg className="h-3.5 w-3.5 shrink-0 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+    <circle cx="12" cy="12" r="9"/>
+    <path strokeLinecap="round" d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/>
+  </svg>
+);
 function Field({ label, value, onChange, multiline = false }: {
   label: string; value: string; onChange: (v: string) => void; multiline?: boolean;
 }) {
@@ -367,8 +375,8 @@ export default function ProposalDetailPage() {
                 <a
                   href={sourceUrl.startsWith('http') ? sourceUrl : `https://${sourceUrl}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-blue-500 hover:underline"
-                >🌐 {sourceUrl}</a></>
+                  className="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-slate-900 hover:underline max-w-[280px] truncate"
+                >{IconGlobe}<span className="truncate">{sourceUrl}</span></a></>
               )}
             </div>
           </div>
@@ -426,8 +434,8 @@ export default function ProposalDetailPage() {
               )}
             </div>
 
-            <button onClick={handleSave} disabled={saving} className="btn-primary text-xs px-4 py-2">
-              {saving ? 'Saving…' : '💾 Save'}
+            <button onClick={handleSave} disabled={saving} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5">
+              {saving ? 'Saving…' : <>{IconSave} Save</>}
             </button>
           </div>
         </div>
@@ -462,8 +470,8 @@ export default function ProposalDetailPage() {
           <button onClick={() => router.push('/proposals')} className="btn-secondary text-sm px-4 py-2">
             ← Back
           </button>
-          <button onClick={handleSave} disabled={saving} className="btn-primary px-6 py-2.5">
-            {saving ? 'Saving…' : '💾 Save Proposal'}
+          <button onClick={handleSave} disabled={saving} className="btn-primary px-6 py-2.5 inline-flex items-center gap-2">
+            {saving ? 'Saving…' : <>{IconSave} Save Proposal</>}
           </button>
         </div>
 

@@ -274,7 +274,6 @@ const renderDocx = async (p: Proposal): Promise<Buffer> => {
   if (logoBuf) {
     headerChildren.push(
       new Paragraph({
-        alignment: AlignmentType.LEFT,
         spacing: { after: 80 },
         children: [
           new ImageRun({

@@ -34,12 +34,12 @@ export default function LinkedInGeneratorPage() {
   // Form
   const [contentType, setContentType] = useState('Educational');
   const [topic, setTopic]             = useState('');
-  const [tone, setTone]               = useState('Professional');
+  const [tone, setTone]               = useState('Conversational');
   const [audience, setAudience]       = useState('Software Decision Makers');
   const [length, setLength]           = useState('Medium (150-300 words)');
   const [cta, setCta]                 = useState('Comment below');
-  const [emojiUsage, setEmojiUsage]   = useState('Moderate');
-  const [hashtagCount, setHashtagCount] = useState(5);
+  const [emojiUsage, setEmojiUsage]   = useState('Minimal');
+  const [hashtagCount, setHashtagCount] = useState(3);
 
   // State
   const [generating, setGenerating] = useState(false);
@@ -155,7 +155,7 @@ export default function LinkedInGeneratorPage() {
         <div className="page-header flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">LinkedIn Content Generator</h1>
-            <p className="mt-1 text-sm text-slate-500">Generate high-quality LinkedIn posts for your software agency.</p>
+            <p className="mt-1 text-sm text-slate-500">Human-sounding posts people actually relate to — no robotic AI tone.</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex gap-2">

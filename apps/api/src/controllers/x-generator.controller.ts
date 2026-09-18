@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../modules/auth/middleware';
-import { dbSet, dbGet, dbGetAll, dbRemove } from '../modules/database/database';
+import { dbSet, dbGetAll, dbRemove } from '../modules/database/database';
 import { generateAiAnalysis } from '../modules/ai/ai.service';
+import {
+  X_FREE_CHAR_LIMIT,
+  fitXThread,
+  fitXTweet,
+} from '../modules/content/social-copy.util';
 import { v4 as uuidv4 } from 'uuid';
 
 export const xRouter = Router();
@@ -17,13 +22,23 @@ interface XPost {
   format: string; // 'Single Tweet' or 'Thread'
   emojiUsage: string;
   hashtagCount: number;
-  body: string; // In thread case, strings separated by '\n\n' can represent tweets
+  body: string;
   hashtags: string[];
   bestPostingTime: string;
   proposalId?: string;
   createdAt: string;
   updatedAt: string;
 }
+
+const X_HUMAN_RULES = `
+WRITING RULES (strict):
+- Sound like a real person on X — punchy, clear, scroll-stopping. Not a press release.
+- NEVER use asterisks (*) or markdown for emphasis.
+- NEVER use AI filler: "In today's world", "game-changer", "leverage", "unlock", "delve".
+- Free X accounts are limited to ${X_FREE_CHAR_LIMIT} characters per tweet. Hard limit — never exceed it.
+- Hashtags: plain words only in JSON (no #). Prefer 1–2 max for reach; never spam.
+- Emojis sparingly and only if they fit the voice.
+`.trim();
 
 // ─── Generate post ────────────────────────────────────────────────────────────
 
@@ -48,31 +63,38 @@ xRouter.post('/generate', async (req: AuthRequest, res) => {
 
     const emojiInstructions = emojiUsage === 'None' ? 'Use NO emojis.' :
       emojiUsage === 'Minimal' ? 'Use 1 emoji maximum.' :
-      emojiUsage === 'Moderate' ? 'Use 1-2 emojis.' :
-      'Use emojis generously.';
+      emojiUsage === 'Moderate' ? 'Use 0–2 emojis only if natural.' :
+      'Use emojis sparingly.';
 
-    const formatInstructions = format === 'Thread' 
-      ? 'Write a Twitter Thread (3-5 tweets). Separate each tweet with three dashes (---).' 
-      : 'Write a single Tweet under 280 characters.';
+    // Cap hashtags for free-tier length
+    const tagCount = Math.min(Math.max(Number(hashtagCount) || 1, 0), 2);
+    const isThread = format === 'Thread';
 
-    const prompt = `You are an expert X (Twitter) content creator for a tech startup/agency. Generate a high-performing post.
+    const formatInstructions = isThread
+      ? `Write a short thread of 3–4 tweets. Separate tweets with --- on its own line.
+Each individual tweet MUST be under ${X_FREE_CHAR_LIMIT} characters (count carefully).
+Put hashtags only on the LAST tweet.`
+      : `Write ONE tweet. Total length including spaces MUST be under ${X_FREE_CHAR_LIMIT} characters.
+Aim for 200–260 characters so hashtags still fit.`;
+
+    const prompt = `You write X (Twitter) posts that people actually want to reply to.
 
 Content Type: ${contentType}
 Topic: ${topic}
 Tone: ${tone}
-Target Audience: ${audience}
+Audience: ${audience}
 Format: ${formatInstructions}
 Emoji: ${emojiInstructions}
-Hashtags: exactly ${hashtagCount}
+Hashtags: exactly ${tagCount} words (no # in the strings)
 
-Return a JSON object with exactly these fields:
+${X_HUMAN_RULES}
+
+Return a JSON object ONLY:
 {
-  "body": "The main content body. If it is a thread, separate tweets with ---",
-  "hashtags": ["array", "of", "${hashtagCount}", "relevant", "hashtags"],
-  "bestPostingTime": "best day and time to post (e.g., Wednesday 12-1pm)"
-}
-
-Return ONLY the JSON object.`;
+  "body": "tweet text OR thread parts separated by ---",
+  "hashtags": ["TagOne", "TagTwo"],
+  "bestPostingTime": "e.g. Wednesday 12-1pm"
+}`;
 
     const aiResult = await generateAiAnalysis({ prompt });
 
@@ -81,6 +103,13 @@ Return ONLY the JSON object.`;
       const jsonMatch = aiResult.raw.match(/\{[\s\S]*\}/);
       if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);
     } catch { parsed = {}; }
+
+    const rawBody = parsed.body ?? aiResult.raw;
+    const rawTags = parsed.hashtags ?? [];
+
+    const fitted = isThread
+      ? fitXThread(rawBody, rawTags, X_FREE_CHAR_LIMIT)
+      : fitXTweet(rawBody, rawTags, X_FREE_CHAR_LIMIT);
 
     const post: XPost = {
       postId: uuidv4(),
@@ -91,10 +120,10 @@ Return ONLY the JSON object.`;
       audience,
       format,
       emojiUsage,
-      hashtagCount,
-      body:              parsed.body              ?? aiResult.raw,
-      hashtags:          parsed.hashtags          ?? [],
-      bestPostingTime:   parsed.bestPostingTime   ?? 'Wednesday 12-1pm',
+      hashtagCount: tagCount,
+      body: fitted.body,
+      hashtags: fitted.hashtags,
+      bestPostingTime: parsed.bestPostingTime ?? 'Wednesday 12-1pm',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -114,10 +143,18 @@ xRouter.post('/save', async (req: AuthRequest, res) => {
     post.userId = req.userId!;
     post.updatedAt = new Date().toISOString();
     if (!post.createdAt) post.createdAt = new Date().toISOString();
+
+    // Re-fit on save so free-tier limits stay enforced after edits
+    const fitted = post.format === 'Thread'
+      ? fitXThread(post.body ?? '', post.hashtags ?? [], X_FREE_CHAR_LIMIT)
+      : fitXTweet(post.body ?? '', post.hashtags ?? [], X_FREE_CHAR_LIMIT);
+    post.body = fitted.body;
+    post.hashtags = fitted.hashtags;
+
     await dbSet(`user_data/${req.userId}/x_posts/${post.postId}`, post);
     res.status(201).json({ post });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Failed to save' });
+    res.status(500).json({ message: 'Failed to save. Please try again in a moment.' });
   }
 });
 
@@ -129,7 +166,7 @@ xRouter.get('/', async (req: AuthRequest, res) => {
     const sorted = posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     res.json({ posts: sorted });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Failed to load posts' });
+    res.status(500).json({ message: 'Failed to load posts. Please try again in a moment.' });
   }
 });
 
@@ -141,8 +178,6 @@ xRouter.delete('/:id', async (req: AuthRequest, res) => {
     await dbRemove(`user_data/${req.userId}/x_posts/${id}`);
     res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Failed to delete' });
+    res.status(500).json({ message: 'Failed to delete. Please try again in a moment.' });
   }
 });
-
-// Removed unused mock connection endpoints (now handled by frontend direct intent)

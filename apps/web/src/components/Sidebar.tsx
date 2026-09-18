@@ -47,6 +47,7 @@ const nav = [
   {
     href: '/lead-finder',
     label: 'Lead Finder',
+    hidden: true, // temporarily hidden from nav — route/page kept
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -139,7 +140,7 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIs
         <p className="text-[10px] font-semibold uppercase tracking-widest text-textsecondary px-3 pt-2 pb-1">
           Navigation
         </p>
-        {nav.map(({ href, label, icon }) => {
+        {nav.filter((item) => !item.hidden).map(({ href, label, icon }) => {
           const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
           return (
             <Link

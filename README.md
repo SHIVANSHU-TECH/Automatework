@@ -1,19 +1,12 @@
 # AI Proposal Generator — Automation-Only
 
-<p align="center">
-  <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Next.js-15.2-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/Express-4.18-000000?style=for-the-badge&logo=express&logoColor=white" />
-  <img src="https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white" />
-  <img src="https://img.shields.io/badge/Groq-AI-F55036?style=for-the-badge&logo=groq&logoColor=white" />
-  <img src="https://img.shields.io/badge/Firebase-Realtime_DB-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" />
-  <img src="https://img.shields.io/badge/Playwright-1.46-45ba4b?style=for-the-badge&logo=playwright&logoColor=white" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
-</p>
+![](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)![](https://img.shields.io/badge/Next.js-15.2-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)![](https://img.shields.io/badge/Express-4.18-000000?style=for-the-badge&logo=express&logoColor=white)![](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)![](https://img.shields.io/badge/Groq-AI-F55036?style=for-the-badge&logo=groq&logoColor=white)![](https://img.shields.io/badge/Firebase-Realtime_DB-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)![](https://img.shields.io/badge/Playwright-1.46-45ba4b?style=for-the-badge&logo=playwright&logoColor=white)![](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
 > **An end-to-end AI-powered platform that crawls any client website, deeply analyzes it for technology, SEO, accessibility, and performance, then auto-generates a professional sales proposal exportable as PDF, DOCX, HTML, or Markdown — all in minutes.**
 
 ---
+
+
 
 ## Table of Contents
 
@@ -35,6 +28,8 @@
 
 ---
 
+
+
 ## Problem Statement
 
 Sales and development agencies spend **hours manually researching a prospective client's website** before they can write a proposal. This involves:
@@ -47,6 +42,8 @@ Sales and development agencies spend **hours manually researching a prospective 
 This process is slow, inconsistent across team members, and rarely data-driven.
 
 ---
+
+
 
 ## Solution
 
@@ -61,6 +58,8 @@ The platform also includes a lightweight **CRM** to track clients and link analy
 
 ---
 
+
+
 ## Purpose
 
 This project is purpose-built for **web/software agencies and freelancers** who want to:
@@ -72,62 +71,81 @@ This project is purpose-built for **web/software agencies and freelancers** who 
 
 ---
 
+
+
 ## Key Features
 
-| Feature | Description |
-|---|---|
-| 🌐 **Website Analyzer** | Crawls any URL and extracts tech stack, CMS, hosting, analytics, social links, contact info, SEO issues, accessibility violations, broken links, content sections |
-| 🤖 **AI Analysis (Groq)** | Generates 20-field AI report: strengths, weaknesses, recommendations for UI/UX/SEO/performance/security/accessibility, automation opportunities, cost estimates |
-| 📄 **Proposal Generator** | Full CRUD for proposals with 19 content sections — auto-populated from analysis data |
-| 📸 **Screenshot Engine** | Playwright-powered multi-viewport screenshots (desktop / tablet / mobile) |
-| 📦 **Multi-format Export** | Export proposals to PDF (A4), DOCX, HTML, or Markdown |
-| 👥 **CRM** | Manage clients, link websites to proposals, track status |
-| 📊 **Dashboard** | Overview of total clients, proposals, pending reviews, and exports |
-| 🔐 **Authentication** | JWT-based register/login with bcrypt password hashing |
-| 📝 **Structured Logging** | JSON log entries with levels DEBUG/INFO/WARN/ERROR/SECURITY |
-| 🔥 **Firebase Realtime DB** | Cloud persistence for synced data across sessions |
+
+| Feature                     | Description                                                                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🌐 **Website Analyzer**     | Crawls any URL and extracts tech stack, CMS, hosting, analytics, social links, contact info, SEO issues, accessibility violations, broken links, content sections |
+| 🤖 **AI Analysis (Groq)**   | Generates 20-field AI report: strengths, weaknesses, recommendations for UI/UX/SEO/performance/security/accessibility, automation opportunities, cost estimates   |
+| 📄 **Proposal Generator**   | Full CRUD for proposals with 19 content sections — auto-populated from analysis data                                                                              |
+| 📸 **Screenshot Engine**    | Playwright-powered multi-viewport screenshots (desktop / tablet / mobile)                                                                                         |
+| 📦 **Multi-format Export**  | Export proposals to PDF (A4), DOCX, HTML, or Markdown                                                                                                             |
+| 👥 **CRM**                  | Manage clients, link websites to proposals, track status                                                                                                          |
+| 📊 **Dashboard**            | Overview of total clients, proposals, pending reviews, and exports                                                                                                |
+| 🔐 **Authentication**       | JWT-based register/login with bcrypt password hashing                                                                                                             |
+| 📝 **Structured Logging**   | JSON log entries with levels DEBUG/INFO/WARN/ERROR/SECURITY                                                                                                       |
+| 🔥 **Firebase Realtime DB** | Cloud persistence for synced data across sessions                                                                                                                 |
 
 
 ---
+
+
 
 ## Tech Stack
 
+
+
 ### Backend — `apps/api`
 
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| Runtime | Node.js + TypeScript | TS 5.7 | Server runtime |
-| Framework | Express.js | 4.18 | HTTP server & routing |
-| Database | SQLite via better-sqlite3 | 8.4 | Local relational storage (WAL mode) |
-| Cloud DB | Firebase Realtime Database | — | Synced/cloud data persistence |
-| AI | Groq API | — | LLM-powered analysis & recommendations |
-| Auth | bcrypt + jsonwebtoken | — | Password hashing + JWT (8h expiry) |
-| Browser | Playwright (Chromium) | 1.46 | Headless screenshots |
-| Scraping | Axios + Cheerio | — | HTTP crawling + HTML parsing |
-| Reports | docx + html-pdf-node | — | Word and PDF generation |
-| Validation | Zod | 3.22 | Schema validation |
-| Logging | Custom file logger | — | JSON logs to `logs/application.log` |
+
+| Layer      | Technology                 | Version | Purpose                                |
+| ---------- | -------------------------- | ------- | -------------------------------------- |
+| Runtime    | Node.js + TypeScript       | TS 5.7  | Server runtime                         |
+| Framework  | Express.js                 | 4.18    | HTTP server & routing                  |
+| Database   | SQLite via better-sqlite3  | 8.4     | Local relational storage (WAL mode)    |
+| Cloud DB   | Firebase Realtime Database | —       | Synced/cloud data persistence          |
+| AI         | Groq API                   | —       | LLM-powered analysis & recommendations |
+| Auth       | bcrypt + jsonwebtoken      | —       | Password hashing + JWT (8h expiry)     |
+| Browser    | Playwright (Chromium)      | 1.46    | Headless screenshots                   |
+| Scraping   | Axios + Cheerio            | —       | HTTP crawling + HTML parsing           |
+| Reports    | docx + html-pdf-node       | —       | Word and PDF generation                |
+| Validation | Zod                        | 3.22    | Schema validation                      |
+| Logging    | Custom file logger         | —       | JSON logs to `logs/application.log`    |
+
+
+
 
 ### Frontend — `apps/web`
 
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| Framework | Next.js | 15.2 | App Router, SSR/CSR |
-| UI | React | 19.0 | Component model |
-| Styling | Tailwind CSS | 3.4 | Utility-first CSS |
-| Icons | lucide-react | 0.450 | SVG icon set |
-| Charts | chart.js | 4.4 | Dashboard visualizations |
-| Utilities | clsx + tailwind-merge | — | Class merging |
+
+| Layer     | Technology            | Version | Purpose                  |
+| --------- | --------------------- | ------- | ------------------------ |
+| Framework | Next.js               | 15.2    | App Router, SSR/CSR      |
+| UI        | React                 | 19.0    | Component model          |
+| Styling   | Tailwind CSS          | 3.4     | Utility-first CSS        |
+| Icons     | lucide-react          | 0.450   | SVG icon set             |
+| Charts    | chart.js              | 4.4     | Dashboard visualizations |
+| Utilities | clsx + tailwind-merge | —       | Class merging            |
+
+
+
 
 ### Shared Packages
 
-| Package | Alias | Contents |
-|---|---|---|
-| `packages/shared` | `@shared` | `UUID`, `DateString`, `ProposalStatus`, `ExportFormat` types |
+
+| Package           | Alias     | Contents                                                                                    |
+| ----------------- | --------- | ------------------------------------------------------------------------------------------- |
+| `packages/shared` | `@shared` | `UUID`, `DateString`, `ProposalStatus`, `ExportFormat` types                                |
 | `packages/domain` | `@domain` | Entity types (`Client`, `Proposal`, `WebsiteAnalysis`, `AiAnalysis`), repository interfaces |
-| `packages/ui` | `@ui` | `Button`, `Card`, `Heading` components + `cn()` utility |
+| `packages/ui`     | `@ui`     | `Button`, `Card`, `Heading` components + `cn()` utility                                     |
+
 
 ---
+
+
 
 ## Architecture Overview
 
@@ -161,6 +179,8 @@ This project is purpose-built for **web/software agencies and freelancers** who 
 ```
 
 ---
+
+
 
 ## Full Data Flow Diagram
 
@@ -293,8 +313,9 @@ This project is purpose-built for **web/software agencies and freelancers** who 
   Return { filename, downloadUrl } → user downloads file
 ```
 
-
 ---
+
+
 
 ## Database Schema
 
@@ -422,6 +443,8 @@ CREATE TABLE audit_logs (
 );
 ```
 
+
+
 ### Entity Relationship Diagram
 
 ```
@@ -439,6 +462,8 @@ audit_logs (standalone — logs any event/entity)
 ```
 
 ---
+
+
 
 ## Firebase Integration
 
@@ -458,6 +483,7 @@ const firebaseConfig = {
 ```
 
 **Firebase is used for:**
+
 - Real-time syncing of client/proposal data across multiple sessions or devices
 - Cloud persistence as a backup layer alongside the local SQLite database
 - Potential multi-user access without requiring a hosted database server
@@ -469,6 +495,8 @@ npm install firebase
 ```
 
 ---
+
+
 
 ## Project Structure
 
@@ -568,75 +596,102 @@ Automation-Only/
 └── README.md
 ```
 
-
 ---
+
+
 
 ## API Reference
 
+
+
 ### Auth
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
+
+| Method | Endpoint             | Body                  | Response          |
+| ------ | -------------------- | --------------------- | ----------------- |
 | `POST` | `/api/auth/register` | `{ email, password }` | `{ token }` (JWT) |
-| `POST` | `/api/auth/login` | `{ email, password }` | `{ token }` (JWT) |
+| `POST` | `/api/auth/login`    | `{ email, password }` | `{ token }` (JWT) |
+
+
+
 
 ### Website Analyzer
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
+
+| Method | Endpoint                        | Body                        | Response                  |
+| ------ | ------------------------------- | --------------------------- | ------------------------- |
 | `POST` | `/api/website-analyzer/analyze` | `{ websiteUrl, clientId? }` | `WebsiteAnalyzerResponse` |
+
 
 **WebsiteAnalyzerResponse fields:** `framework`, `cms`, `hosting`, `analytics[]`, `performanceScore`, `isMobileResponsive`, `brokenLinks[]`, `accessibilityIssues[]`, `seoIssues[]`, `sslValid`, `contactInformation[]`, `socialLinks[]`, `businessCategory`, `detectedTechnologies[]`, `contentExtraction{ headings, paragraphs, services, testimonials, pricing, forms, ctas, navigation, footer, metadata }`
 
 ### Proposals
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
-| `GET` | `/api/proposals` | — | `{ proposals[] }` |
-| `GET` | `/api/proposals/:id` | — | `{ proposal }` |
-| `POST` | `/api/proposals` | `CreateProposalRequest` | `{ proposal }` |
-| `PUT` | `/api/proposals/:id` | `Partial<Proposal>` | `{ proposal }` |
+
+| Method | Endpoint             | Body                    | Response          |
+| ------ | -------------------- | ----------------------- | ----------------- |
+| `GET`  | `/api/proposals`     | —                       | `{ proposals[] }` |
+| `GET`  | `/api/proposals/:id` | —                       | `{ proposal }`    |
+| `POST` | `/api/proposals`     | `CreateProposalRequest` | `{ proposal }`    |
+| `PUT`  | `/api/proposals/:id` | `Partial<Proposal>`     | `{ proposal }`    |
+
 
 **Proposal status lifecycle:** `draft` → `generated` → `reviewed` → `exported`
 
 ### CRM
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
-| `GET` | `/api/crm` | — | `{ clients[] }` |
-| `POST` | `/api/crm/clients` | `{ name, websiteUrl, businessCategory, contactEmail, contactPhone, socialLinks }` | `{ clientId }` |
-| `GET` | `/api/crm/proposals` | — | `{ proposals[] }` |
+
+| Method | Endpoint             | Body                                                                              | Response          |
+| ------ | -------------------- | --------------------------------------------------------------------------------- | ----------------- |
+| `GET`  | `/api/crm`           | —                                                                                 | `{ clients[] }`   |
+| `POST` | `/api/crm/clients`   | `{ name, websiteUrl, businessCategory, contactEmail, contactPhone, socialLinks }` | `{ clientId }`    |
+| `GET`  | `/api/crm/proposals` | —                                                                                 | `{ proposals[] }` |
+
+
+
 
 ### Reports / Export
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
+
+| Method | Endpoint              | Body                     | Response                    |
+| ------ | --------------------- | ------------------------ | --------------------------- |
 | `POST` | `/api/reports/export` | `{ proposalId, format }` | `{ filename, downloadUrl }` |
+
 
 **Supported formats:** `pdf` · `docx` · `html` · `markdown`
 
 ### AI Analysis
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
+
+| Method | Endpoint  | Body                 | Response                            |
+| ------ | --------- | -------------------- | ----------------------------------- |
 | `POST` | `/api/ai` | `{ prompt, model? }` | `{ raw, sections: { aiAnalysis } }` |
+
+
+
 
 ### Screenshots
 
-| Method | Endpoint | Body | Response |
-|---|---|---|---|
+
+| Method | Endpoint           | Body             | Response                      |
+| ------ | ------------------ | ---------------- | ----------------------------- |
 | `POST` | `/api/screenshots` | `{ url, mode? }` | `{ path, mode, downloadUrl }` |
+
 
 **Modes:** `desktop` (1280×800) · `tablet` (768×1024) · `mobile` (375×812)
 
 ### Static Files
 
-| Path | Serves |
-|---|---|
-| `GET /reports/files/:filename` | Generated proposal files |
-| `GET /screenshots/files/:filename` | Captured screenshots |
+
+| Path                               | Serves                   |
+| ---------------------------------- | ------------------------ |
+| `GET /reports/files/:filename`     | Generated proposal files |
+| `GET /screenshots/files/:filename` | Captured screenshots     |
+
 
 ---
+
+
 
 ## Environment Variables
 
@@ -663,15 +718,23 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 
 ---
 
+
+
 ## Getting Started
+
+
 
 ### Prerequisites
 
-| Tool | Minimum Version |
-|---|---|
-| Node.js | 20.x |
-| npm | 9.x |
+
+| Tool                | Minimum Version      |
+| ------------------- | -------------------- |
+| Node.js             | 20.x                 |
+| npm                 | 9.x                  |
 | Playwright browsers | Chromium (see below) |
+
+
+
 
 ### 1. Clone and install
 
@@ -681,6 +744,8 @@ cd Automation-Only
 npm install
 ```
 
+
+
 ### 2. Install Playwright Chromium
 
 The screenshot engine requires the Chromium binary:
@@ -689,12 +754,16 @@ The screenshot engine requires the Chromium binary:
 npx playwright install chromium
 ```
 
+
+
 ### 3. Configure environment
 
 ```bash
 copy .env.example .env
 # Edit .env and set your Groq_api_key and APP_AUTH_SECRET
 ```
+
+
 
 ### 4. Start development servers
 
@@ -717,6 +786,8 @@ The SQLite database and all required directories (`data/`, `logs/`) are created 
 
 ---
 
+
+
 ## Development Workflow
 
 ```
@@ -733,6 +804,8 @@ npm run test         # Run unit tests in both apps
 npm run test:e2e     # Playwright end-to-end tests
 ```
 
+
+
 ### Adding a new feature
 
 1. Add domain types to `packages/domain/src/entities.ts`
@@ -745,7 +818,11 @@ npm run test:e2e     # Playwright end-to-end tests
 
 ---
 
+
+
 ## Known Issues & Notes
+
+
 
 ### 1. `ai.service.ts` references OpenAI SDK — needs update to Groq
 
@@ -769,9 +846,12 @@ export const generateAiAnalysis = async (request: AiRequest): Promise<AiResponse
 ```
 
 Install the Groq SDK:
+
 ```bash
 npm install groq-sdk --workspace apps/api
 ```
+
+
 
 ### 2. JWT middleware is not applied
 
@@ -805,10 +885,12 @@ The internal packages are named `@domain`, `@shared`, and `@ui` in their `packag
 
 ---
 
+
+
 ## License
 
 This project is private. All rights reserved.
 
 ---
 
-<p align="center">Built with TypeScript · Next.js · Express · SQLite · Firebase · Groq AI</p>
+Built with TypeScript · Next.js · Express · SQLite · Firebase · Groq AI

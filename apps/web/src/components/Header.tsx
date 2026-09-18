@@ -8,7 +8,7 @@ import { getEmail, clearToken, isAuthenticated } from '../lib/auth';
 const navLinks = [
   { href: '/website-analyzer', label: 'Website Analyzer' },
   { href: '/proposals',        label: 'Proposals' },
-  { href: '/lead-finder',      label: 'Lead Finder' },
+  { href: '/lead-finder',      label: 'Lead Finder', hidden: true }, // temporarily hidden — route kept
 ];
 
 const dropdownLinks = [
@@ -52,6 +52,7 @@ const dropdownLinks = [
   {
     href: '/lead-finder',
     label: 'Lead Finder',
+    hidden: true, // temporarily hidden from nav — route/page kept
     icon: (
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -135,7 +136,7 @@ export default function Header() {
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map(l => (
+          {navLinks.filter((l) => !l.hidden).map(l => (
             <Link key={l.href} href={l.href} className="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-colors">
               {l.label}
             </Link>
@@ -170,7 +171,7 @@ export default function Header() {
 
                   {/* Nav items */}
                   <div className="py-1.5">
-                    {dropdownLinks.map(l => (
+                    {dropdownLinks.filter((l) => !l.hidden).map(l => (
                       <Link
                         key={l.href}
                         href={l.href}
@@ -231,7 +232,7 @@ export default function Header() {
       {/* Mobile nav */}
       {mobileOpen && (
         <div className="md:hidden border-t border-white/10 bg-slate-900 px-5 py-3 space-y-1">
-          {navLinks.map(l => (
+          {navLinks.filter((l) => !l.hidden).map(l => (
             <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
               {l.label}
             </Link>

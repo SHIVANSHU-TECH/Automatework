@@ -46,6 +46,7 @@ const features = [
     title: 'Lead Finder',
     description: 'Find and qualify new leads by industry, location, and business type. Save promising leads to your CRM instantly.',
     href: '/lead-finder',
+    hidden: true, // temporarily hidden from landing — route/page kept
     color: 'from-emerald-500/10 to-emerald-500/5 border-emerald-500/20',
     iconColor: 'bg-emerald-500/20 text-emerald-400',
     icon: (
@@ -248,7 +249,7 @@ function FeaturesGrid() {
         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Everything you need</p>
         <h2 className="text-2xl font-extrabold text-slate-900 mb-8">One platform, every tool</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map(f => (
+          {features.filter((f) => !f.hidden).map(f => (
             <Link
               key={f.title}
               href={f.href}
@@ -323,7 +324,7 @@ function Footer() {
           <Link href="/website-analyzer" className="hover:text-slate-300 transition-colors">Website Analyzer</Link>
           <Link href="/proposals"        className="hover:text-slate-300 transition-colors">Proposals</Link>
           <Link href="/crm"              className="hover:text-slate-300 transition-colors">Clients</Link>
-          <Link href="/lead-finder"      className="hover:text-slate-300 transition-colors">Lead Finder</Link>
+          {/* Lead Finder link hidden — route/page kept */}
           <Link href="/login"            className="hover:text-slate-300 transition-colors">Sign In</Link>
         </div>
         <p className="text-xs text-slate-600">© {new Date().getFullYear()} Automate Work</p>

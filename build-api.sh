@@ -47,6 +47,18 @@ TSEOF
 echo "==> Compiling TypeScript (V1 + V2 controllers)..."
 npx tsc -p apps/api/tsconfig.build.json
 
+echo "==> Copying API assets (logo) into dist..."
+mkdir -p apps/api/dist/assets
+if [ -f apps/api/assets/logo.png ]; then
+  cp apps/api/assets/logo.png apps/api/dist/assets/logo.png
+  echo "  ok logo.png"
+fi
+# Also keep a copy next to api root for path fallbacks used at runtime
+mkdir -p assets
+if [ -f apps/api/assets/logo.png ]; then
+  cp apps/api/assets/logo.png assets/logo.png 2>/dev/null || true
+fi
+
 echo "==> Cleaning up temp package copies..."
 rm -rf apps/api/src/_packages
 rm -f  apps/api/tsconfig.build.json

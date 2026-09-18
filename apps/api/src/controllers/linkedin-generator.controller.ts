@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../modules/auth/middleware';
 import { dbSet, dbGet, dbGetAll, dbRemove } from '../modules/database/database';
 import { generateAiAnalysis } from '../modules/ai/ai.service';
+import { cleanHashtags, stripAiFormatting } from '../modules/content/social-copy.util';
 import { v4 as uuidv4 } from 'uuid';
 
 export const linkedinRouter = Router();
@@ -32,6 +33,19 @@ interface LinkedInPost {
   updatedAt: string;
 }
 
+const HUMAN_VOICE_RULES = `
+WRITING RULES (strict — posts that break these get ignored):
+- Sound like a real founder or marketer talking to peers — warm, specific, conversational.
+- NEVER use asterisks (*) or underscores (_) for emphasis or bold. No markdown at all.
+- NEVER write like ChatGPT: no "In today's digital world", "Let's dive in", "game-changer", "leverage", "unlock potential", "delve", "tapestry", "landscape".
+- Prefer short sentences. Mix sentence length. Occasional one-line paragraphs for scroll-stopping rhythm.
+- Use concrete details, mini-stories, or a real tension the reader feels — not generic advice.
+- Hashtags: plain words only (no # inside the JSON strings). Max as requested. Prefer niche over spammy.
+- Emojis only where they feel natural — never decorate every line.
+- CTA should feel like a real invite, not a sales script.
+`.trim();
+
+
 // ─── Generate post ────────────────────────────────────────────────────────────
 
 linkedinRouter.post('/generate', async (req: AuthRequest, res) => {
@@ -58,31 +72,35 @@ linkedinRouter.post('/generate', async (req: AuthRequest, res) => {
 
     const emojiInstructions = emojiUsage === 'None' ? 'Use NO emojis.' :
       emojiUsage === 'Minimal' ? 'Use 1-2 emojis maximum.' :
-      emojiUsage === 'Moderate' ? 'Use 3-5 emojis strategically.' :
-      'Use emojis generously throughout.';
+      emojiUsage === 'Moderate' ? 'Use 3-5 emojis strategically where a human would.' :
+      'Use emojis generously but still naturally.';
 
     const lengthGuide = length.includes('Short') ? '50-100 words' :
       length.includes('Long') ? '400-600 words' : '150-300 words';
 
-    const prompt = `You are an expert LinkedIn content creator for a software development agency. Generate a high-performing LinkedIn post.
+    const tagCount = Math.min(Math.max(Number(hashtagCount) || 3, 0), 8);
+
+    const prompt = `You write LinkedIn posts that get reach because people feel seen — not because they sound "AI polished".
 
 Content Type: ${contentType}
 Topic: ${topic}
-Tone: ${tone}
+Tone: ${tone} (still human — never stiff or corporate-robot)
 Target Audience: ${audience}
 Word Count: ${lengthGuide}
-CTA: ${cta}
+CTA direction: ${cta}
 Emoji: ${emojiInstructions}
-Hashtags: exactly ${hashtagCount}
+Hashtags: exactly ${tagCount} (words only, no # symbol in the strings)
 ${proposalContext ? `Context from proposal: ${proposalContext}` : ''}
+
+${HUMAN_VOICE_RULES}
 
 Return a JSON object with exactly these fields:
 {
-  "headline": "attention-grabbing headline (max 10 words)",
-  "hook": "first 1-2 lines that stop the scroll",
-  "body": "main content body",
-  "ctaText": "specific call to action sentence",
-  "hashtags": ["array", "of", "${hashtagCount}", "relevant", "hashtags"],
+  "headline": "attention-grabbing headline (max 10 words, no asterisks)",
+  "hook": "first 1-2 lines that stop the scroll — personal or specific",
+  "body": "main content — human voice, line breaks ok, ZERO asterisks",
+  "ctaText": "natural call to action",
+  "hashtags": ["WordOne", "WordTwo"],
   "imageSuggestions": ["3 specific image or graphic ideas"],
   "carouselSuggestions": ["3 carousel slide ideas if applicable"],
   "commentStrategy": "one sentence on how to boost comments",
@@ -109,15 +127,15 @@ Return ONLY the JSON object.`;
       length,
       cta,
       emojiUsage,
-      hashtagCount,
-      headline:          parsed.headline          ?? topic,
-      hook:              parsed.hook              ?? '',
-      body:              parsed.body              ?? aiResult.raw,
-      ctaText:           parsed.ctaText           ?? cta,
-      hashtags:          parsed.hashtags          ?? [],
-      imageSuggestions:  parsed.imageSuggestions  ?? [],
-      carouselSuggestions: parsed.carouselSuggestions ?? [],
-      commentStrategy:   parsed.commentStrategy   ?? '',
+      hashtagCount: tagCount,
+      headline:          stripAiFormatting(parsed.headline          ?? topic),
+      hook:              stripAiFormatting(parsed.hook              ?? ''),
+      body:              stripAiFormatting(parsed.body              ?? aiResult.raw),
+      ctaText:           stripAiFormatting(parsed.ctaText           ?? cta),
+      hashtags:          cleanHashtags(parsed.hashtags, tagCount),
+      imageSuggestions:  (parsed.imageSuggestions  ?? []).map((s) => stripAiFormatting(String(s))),
+      carouselSuggestions: (parsed.carouselSuggestions ?? []).map((s) => stripAiFormatting(String(s))),
+      commentStrategy:   stripAiFormatting(parsed.commentStrategy   ?? ''),
       bestPostingTime:   parsed.bestPostingTime   ?? 'Tuesday 8-9am',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -145,16 +163,19 @@ linkedinRouter.post('/from-proposal', async (req: AuthRequest, res) => {
 
     // Reuse the generate endpoint logic inline
     const promptMap: Record<string, string> = {
-      'Case Study': `Write a LinkedIn case study post about this project. Highlight the problem, solution, and results.`,
-      'Project Showcase': `Write a LinkedIn project showcase post. Highlight technical excellence and innovation.`,
-      'Client Win': `Write a LinkedIn post celebrating a client success story. Be proud but not boastful.`,
+      'Case Study': `Write a LinkedIn case study as a short story: the mess they were in, what changed, what improved. No fluff.`,
+      'Project Showcase': `Write a LinkedIn project showcase like you're telling a peer what you built and why it mattered.`,
+      'Client Win': `Write a LinkedIn post celebrating a client win — proud, specific, not salesy.`,
     };
 
     const prompt = `${promptMap[postType] ?? promptMap['Case Study']}
 
 ${context}
 
-Return a JSON object with: headline, hook, body, ctaText, hashtags (5 items), imageSuggestions (3 items), carouselSuggestions (3 items), commentStrategy, bestPostingTime.
+${HUMAN_VOICE_RULES}
+
+Return a JSON object with: headline, hook, body, ctaText, hashtags (5 words, no #), imageSuggestions (3), carouselSuggestions (3), commentStrategy, bestPostingTime.
+No asterisks or markdown anywhere in the text fields.
 Return ONLY the JSON.`;
 
     const aiResult = await generateAiAnalysis({ prompt });
@@ -176,14 +197,14 @@ Return ONLY the JSON.`;
       emojiUsage: 'Moderate',
       hashtagCount: 5,
       proposalId,
-      headline:            parsed.headline            ?? proposal.title,
-      hook:                parsed.hook                ?? '',
-      body:                parsed.body                ?? aiResult.raw,
-      ctaText:             parsed.ctaText             ?? 'Reach out to learn more',
-      hashtags:            parsed.hashtags            ?? [],
-      imageSuggestions:    parsed.imageSuggestions    ?? [],
-      carouselSuggestions: parsed.carouselSuggestions ?? [],
-      commentStrategy:     parsed.commentStrategy     ?? '',
+      headline:            stripAiFormatting(parsed.headline            ?? proposal.title),
+      hook:                stripAiFormatting(parsed.hook                ?? ''),
+      body:                stripAiFormatting(parsed.body                ?? aiResult.raw),
+      ctaText:             stripAiFormatting(parsed.ctaText             ?? 'Reach out to learn more'),
+      hashtags:            cleanHashtags(parsed.hashtags, 5),
+      imageSuggestions:    (parsed.imageSuggestions    ?? []).map((s) => stripAiFormatting(String(s))),
+      carouselSuggestions: (parsed.carouselSuggestions ?? []).map((s) => stripAiFormatting(String(s))),
+      commentStrategy:     stripAiFormatting(parsed.commentStrategy     ?? ''),
       bestPostingTime:     parsed.bestPostingTime     ?? 'Tuesday 8-9am',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

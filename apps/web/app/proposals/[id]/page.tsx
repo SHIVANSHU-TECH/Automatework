@@ -45,10 +45,54 @@ const statusNext: Record<string, string> = {
 };
 
 const FORMATS = [
-  { key: 'pdf',      label: '📄 PDF',      desc: 'A4 document' },
-  { key: 'docx',     label: '📝 Word',     desc: '.docx file' },
-  { key: 'html',     label: '🌐 HTML',     desc: 'web page' },
-  { key: 'markdown', label: '⬇ Markdown', desc: '.md file' },
+  {
+    key: 'pdf',
+    label: 'PDF',
+    desc: 'A4 document',
+    icon: (
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#E5252A" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+        <path fill="#B71C1C" d="M14 2v6h6"/>
+        <path fill="#fff" d="M8.2 17.2c.2-.9.6-1.7 1.2-2.4.4-.4.8-.7 1.3-.9-.3-.5-.5-1-.6-1.6-.1-.5 0-1 .3-1.4.2-.3.5-.5.9-.5.4 0 .7.2.9.6.2.5.2 1.1 0 1.8-.1.4-.3.8-.5 1.2.5.2 1 .6 1.4 1.1.6.7 1 1.5 1.2 2.4h-1.3c-.1-.5-.4-1-.8-1.4-.3-.3-.7-.6-1.1-.7-.4.2-.8.5-1.1.8-.4.4-.7.9-.8 1.4H8.2zm2.6-5.6c.1-.3.1-.6 0-.8 0-.1-.1-.1-.2-.1s-.2.1-.2.2c-.1.2 0 .5.1.9.1-.1.2-.2.3-.2z"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'docx',
+    label: 'Word',
+    desc: '.docx file',
+    icon: (
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#185ABD" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/>
+        <path fill="#103F91" d="M14 2v6h6"/>
+        <path fill="#fff" d="M7.6 16.8 9.1 9.5h1.5l1 4.7 1-4.7h1.5l1.5 7.3h-1.5l-.9-4.6-1 4.6H11l-1-4.6-.9 4.6H7.6z"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'html',
+    label: 'HTML',
+    desc: 'web page',
+    icon: (
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#E44D26" d="M4 2h16l-1.5 17L12 22l-6.5-3L4 2z"/>
+        <path fill="#F16529" d="M12 21.2 17.2 19.7 18.5 4.5H12V21.2z"/>
+        <path fill="#EBEBEB" d="M12 10.2H9.2l-.2-1.8H12V6.6H7.1l.5 5.4H12v-1.8zm0 5.5-.1-.1-2.8-.8-.2-1.8H7.1l.3 3.6L12 17.5v-1.8z"/>
+        <path fill="#fff" d="M12 10.2v1.8h2.7l-.3 2.6-2.4.7v1.9l4.1-1.1.4-4.1.1-1.8H12z"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'markdown',
+    label: 'Markdown',
+    desc: '.md file',
+    icon: (
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="2" fill="#0B132B"/>
+        <path fill="#fff" d="M6.5 15.5V8.5h1.6l1.5 2.4 1.5-2.4H12.7v7h-1.5V10.8L9.6 13.4H9L7.9 10.8v4.7H6.5zm8.2 0-2.4-3h1.6V8.5h1.5v4h1.6l-2.3 3z"/>
+      </svg>
+    ),
+  },
 ];
 
 function Field({ label, value, onChange, multiline = false }: {
@@ -354,20 +398,28 @@ export default function ProposalDetailPage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>Exporting {exporting.toUpperCase()}…</>
                 ) : (
-                  <>⬇ Export <span className="text-slate-400">{exportOpen ? '▴' : '▾'}</span></>
+                  <>
+                    <svg className="h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Export <span className="text-slate-400">{exportOpen ? '▴' : '▾'}</span>
+                  </>
                 )}
               </button>
 
               {exportOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-xl min-w-[160px] overflow-hidden">
-                  {FORMATS.map(({ key, label, desc }) => (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-xl shadow-xl min-w-[200px] overflow-hidden">
+                  {FORMATS.map(({ key, label, desc, icon }) => (
                     <button
                       key={key}
                       onClick={() => handleExport(key)}
-                      className="w-full text-left px-4 py-3 text-sm hover:bg-blue-50 hover:text-blue-700 text-slate-700 flex flex-col transition-colors"
+                      className="w-full text-left px-3.5 py-2.5 text-sm hover:bg-slate-50 text-slate-700 flex items-center gap-3 transition-colors"
                     >
-                      <span className="font-medium">{label}</span>
-                      <span className="text-xs text-slate-400">{desc}</span>
+                      {icon}
+                      <span className="flex flex-col min-w-0">
+                        <span className="font-medium text-slate-800">{label}</span>
+                        <span className="text-xs text-slate-400">{desc}</span>
+                      </span>
                     </button>
                   ))}
                 </div>

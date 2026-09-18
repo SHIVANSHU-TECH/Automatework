@@ -34,8 +34,8 @@ export default function XGeneratorPage() {
   const [tone, setTone]               = useState('Conversational');
   const [audience, setAudience]       = useState('Tech Community');
   const [format, setFormat]           = useState('Single Tweet');
-  const [emojiUsage, setEmojiUsage]   = useState('Moderate');
-  const [hashtagCount, setHashtagCount] = useState(2);
+  const [emojiUsage, setEmojiUsage]   = useState('Minimal');
+  const [hashtagCount, setHashtagCount] = useState(1);
 
   // State
   const [generating, setGenerating] = useState(false);
@@ -128,7 +128,7 @@ export default function XGeneratorPage() {
         <div className="page-header flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">X (Twitter) Content Generator</h1>
-            <p className="mt-1 text-sm text-slate-500">Generate high-performing tweets and threads.</p>
+            <p className="mt-1 text-sm text-slate-500">Punchy, human tweets that fit free X&apos;s 280-character limit.</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
@@ -194,7 +194,7 @@ export default function XGeneratorPage() {
                 <label className="flex flex-col gap-1.5">
                   <span className="section-label">Hashtags</span>
                   <select className="input-base" value={hashtagCount} onChange={(e) => setHashtagCount(Number(e.target.value))}>
-                    {[0,1,2,3,4,5].map((n) => <option key={n} value={n}>{n}</option>)}
+                    {[0, 1, 2].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
               </div>
@@ -263,10 +263,11 @@ export default function XGeneratorPage() {
                     </div>
                   </div>
 
-                  {/* Character count */}
-                  <p className={`text-xs text-right ${fullPostText.length > 280 && format === 'Single Tweet' ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
-                    {fullPostText.length} characters
-                    {format === 'Single Tweet' && fullPostText.length > 280 && ' (Over limit!)'}
+                  {/* Character count — free X accounts: 280 chars */}
+                  <p className={`text-xs text-right ${fullPostText.length > 280 && format === 'Single Tweet' ? 'text-red-500 font-bold' : fullPostText.length > 260 && format === 'Single Tweet' ? 'text-amber-600' : 'text-slate-400'}`}>
+                    {fullPostText.length} / 280 characters
+                    {format === 'Single Tweet' && fullPostText.length > 280 && ' — over free X limit'}
+                    {format === 'Thread' && ' (each tweet kept under 280)'}
                   </p>
                 </div>
               )}

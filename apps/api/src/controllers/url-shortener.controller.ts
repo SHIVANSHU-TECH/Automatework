@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth, type AuthRequest } from '../modules/auth/middleware';
-import { dbSet, dbGet, dbGetAll, dbRemove } from '../modules/database/database';
+import { dbSet, dbGet, dbGetAll, dbRemove, paths } from '../modules/database/database';
+import type { Proposal } from '@domain';
 import { v4 as uuidv4 } from 'uuid';
 
 export const urlShortenerRouter = Router();
@@ -87,6 +88,17 @@ urlShortenerRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
     await dbSet(`user_data/${req.userId}/short_urls/${shortId}`, entry);
     // Also index by shortCode for redirect lookup
     await dbSet(`short_codes/${shortCode}`, { shortId, userId: req.userId, originalUrl: entry.originalUrl, password: entry.password, expiresAt: entry.expiresAt });
+
+    // Mirror proposal to shared_proposals so any viewer can read it via /api/proposals/shared/:id
+    if (proposalId) {
+      dbGet<Proposal>(paths.proposal(req.userId!, proposalId))
+        .then((proposal) => {
+          if (proposal) {
+            dbSet(`shared_proposals/${proposalId}`, proposal).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
 
     res.status(201).json({
       shortUrl: {

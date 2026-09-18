@@ -58,7 +58,7 @@ authRouter.post('/firebase', async (req, res) => {
     if (msg.includes('expired') || msg.includes('invalid')) {
       return res.status(401).json({ message: 'Firebase token invalid or expired. Please sign in again.' });
     }
-    res.status(500).json({ message: msg || 'Authentication failed' });
+    res.status(500).json({ message: 'Authentication failed. Please try again.' });
   }
 });
 
@@ -78,7 +78,7 @@ authRouter.post('/register', async (req, res) => {
     await dbSet(paths.user(userId), { userId, email, passwordHash, createdAt: new Date().toISOString() });
     res.status(201).json({ message: 'Account created. Please verify your email before signing in.' });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Registration failed' });
+    res.status(500).json({ message: 'Registration failed. Please try again.' });
   }
 });
 
@@ -93,6 +93,6 @@ authRouter.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
     res.json({ token: createToken(user.userId) });
   } catch (error) {
-    res.status(500).json({ message: (error as Error).message || 'Login failed' });
+    res.status(500).json({ message: 'Login failed. Please try again.' });
   }
 });

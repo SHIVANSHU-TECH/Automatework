@@ -40,48 +40,13 @@ function LoginForm() {
 
   const handleEmailAuth = async () => {
     setError(null); setInfo(null);
-    if (!email.trim() || !password.trim()) { setError('Email and password are required.'); return; }
-    if (tab === 'register' && password.length < 8) { setError('Password must be at least 8 characters.'); return; }
-    if (tab === 'register' && password !== confirm) { setError('Passwords do not match.'); return; }
-
-    setLoading(true);
-    try {
-      if (tab === 'register') {
-        await registerWithEmail(email.trim(), password);
-        setInfo('Account created! A verification email has been sent to ' + email.trim() + '. Please check your inbox and click the link before signing in.');
-        setTab('login');
-        setPassword(''); setConfirm('');
-      } else {
-        const user = await loginWithEmail(email.trim(), password);
-        const idToken = await user.getIdToken();
-        const { token } = await exchangeFirebaseToken(idToken);
-        saveToken(token, email.trim());
-        router.replace('/dashboard');
-      }
-    } catch (err) {
-      const msg = (err as Error).message;
-      setError(msg);
-      // Show resend button if verification error
-      if (msg.toLowerCase().includes('verify')) setShowResend(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError('Sign in and sign up with email is temporarily unavailable. Please use Google or another sign-in option above — we\'re sorry for the inconvenience.');
+    return;
 
   // ─── Resend verification email ──────────────────────────────────────────────
 
   const handleResend = async () => {
-    if (!email || !password) { setError('Enter your email and password to resend the verification email.'); return; }
-    setLoading(true); setError(null);
-    try {
-      await resendVerification(email.trim(), password);
-      setInfo('Verification email resent to ' + email.trim() + '. Please check your inbox.');
-      setShowResend(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    setError('Sign in with email is temporarily unavailable. Please use Google or another sign-in option above.');
   };
 
   // ─── Google OAuth ───────────────────────────────────────────────────────────

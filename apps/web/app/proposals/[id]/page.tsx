@@ -136,6 +136,7 @@ export default function ProposalDetailPage() {
 
   const [proposal, setProposal]       = useState<Proposal | null>(null);
   const [loading, setLoading]         = useState(true);
+  const [isOwner, setIsOwner]         = useState(false);
   const [saving, setSaving]           = useState(false);
   const [advancing, setAdvancing]     = useState(false);
   const [exporting, setExporting]     = useState<string | null>(null);
@@ -172,25 +173,37 @@ export default function ProposalDetailPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Load proposal
+  // Load proposal — try owner endpoint first, fall back to public shared endpoint
   useEffect(() => {
     if (!id) return;
+    let cancelled = false;
+
+    const applyProposal = (p: Proposal) => {
+      if (cancelled) return;
+      setProposal(p);
+      setTitle(p.title ?? '');
+      setExec(p.executiveSummary ?? '');
+      setScope(p.scope ?? '');
+      setTimeline(p.timeline ?? '');
+      setDeliverables(p.deliverables ?? '');
+      setPricing(p.pricing ?? '');
+      setMaintenance(p.maintenancePlan ?? '');
+      setWhyUs(p.whyChooseUs ?? '');
+      setCaseStudies(p.caseStudies ?? '');
+      setTerms(p.terms ?? '');
+    };
+
     fetchJson<{ proposal: Proposal }>(`/api/proposals/${id}`)
-      .then(({ proposal: p }) => {
-        setProposal(p);
-        setTitle(p.title ?? '');
-        setExec(p.executiveSummary ?? '');
-        setScope(p.scope ?? '');
-        setTimeline(p.timeline ?? '');
-        setDeliverables(p.deliverables ?? '');
-        setPricing(p.pricing ?? '');
-        setMaintenance(p.maintenancePlan ?? '');
-        setWhyUs(p.whyChooseUs ?? '');
-        setCaseStudies(p.caseStudies ?? '');
-        setTerms(p.terms ?? '');
+      .then(({ proposal: p }) => { setIsOwner(true); applyProposal(p); })
+      .catch(() => {
+        // Not the owner — try the public shared snapshot (created when owner shared the link)
+        return fetchJson<{ proposal: Proposal }>(`/api/proposals/shared/${id}`)
+          .then(({ proposal: p }) => { setIsOwner(false); applyProposal(p); })
+          .catch((err) => { if (!cancelled) setError((err as Error).message); });
       })
-      .catch((err) => setError((err as Error).message))
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [id]);
 
   const handleSave = async () => {
@@ -383,7 +396,7 @@ export default function ProposalDetailPage() {
 
           {/* ─── Action buttons ──────────────────────────────────────── */}
           <div className="flex gap-2 flex-wrap items-center">
-            {statusNext[proposal.status] && (
+            {isOwner && statusNext[proposal.status] && (
               <button
                 onClick={handleAdvanceStatus}
                 disabled={advancing}
@@ -434,9 +447,11 @@ export default function ProposalDetailPage() {
               )}
             </div>
 
-            <button onClick={handleSave} disabled={saving} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5">
-              {saving ? 'Saving…' : <>{IconSave} Save</>}
-            </button>
+            {isOwner && (
+              <button onClick={handleSave} disabled={saving} className="btn-primary text-xs px-4 py-2 inline-flex items-center gap-1.5">
+                {saving ? 'Saving…' : <>{IconSave} Save</>}
+              </button>
+            )}
           </div>
         </div>
 
@@ -452,30 +467,40 @@ export default function ProposalDetailPage() {
           </div>
         )}
 
+        {!isOwner && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5 text-sm text-amber-700">
+            👁 You are viewing a shared proposal (read-only)
+          </div>
+        )}
+
         {/* ─── Editable fields ─────────────────────────────────────────── */}
         <div className="card space-y-5">
-          <Field label="Title"               value={title}             onChange={setTitle} />
-          <Field label="Executive Summary"   value={executiveSummary} onChange={setExec}  multiline />
-          <Field label="Scope of Work"       value={scope}             onChange={setScope} multiline />
-          <Field label="Timeline"            value={timeline}          onChange={setTimeline} />
-          <Field label="Deliverables"        value={deliverables}      onChange={setDeliverables} multiline />
-          <Field label="Pricing"             value={pricing}           onChange={setPricing}      multiline />
-          <Field label="Maintenance Plan"    value={maintenance}       onChange={setMaintenance}  multiline />
-          <Field label="Why Choose Us"       value={whyUs}             onChange={setWhyUs}        multiline />
-          <Field label="Case Studies"        value={caseStudies}       onChange={setCaseStudies}  multiline />
-          <Field label="Terms & Conditions"  value={terms}             onChange={setTerms}        multiline />
+          <Field label="Title"               value={title}             onChange={isOwner ? setTitle : () => {}} multiline={false} />
+          <Field label="Executive Summary"   value={executiveSummary} onChange={isOwner ? setExec : () => {}}  multiline />
+          <Field label="Scope of Work"       value={scope}             onChange={isOwner ? setScope : () => {}} multiline />
+          <Field label="Timeline"            value={timeline}          onChange={isOwner ? setTimeline : () => {}} />
+          <Field label="Deliverables"        value={deliverables}      onChange={isOwner ? setDeliverables : () => {}} multiline />
+          <Field label="Pricing"             value={pricing}           onChange={isOwner ? setPricing : () => {}}      multiline />
+          <Field label="Maintenance Plan"    value={maintenance}       onChange={isOwner ? setMaintenance : () => {}}  multiline />
+          <Field label="Why Choose Us"       value={whyUs}             onChange={isOwner ? setWhyUs : () => {}}        multiline />
+          <Field label="Case Studies"        value={caseStudies}       onChange={isOwner ? setCaseStudies : () => {}}  multiline />
+          <Field label="Terms & Conditions"  value={terms}             onChange={isOwner ? setTerms : () => {}}        multiline />
         </div>
+
 
         <div className="flex justify-between items-center">
           <button onClick={() => router.push('/proposals')} className="btn-secondary text-sm px-4 py-2">
             ← Back
           </button>
-          <button onClick={handleSave} disabled={saving} className="btn-primary px-6 py-2.5 inline-flex items-center gap-2">
-            {saving ? 'Saving…' : <>{IconSave} Save Proposal</>}
-          </button>
+          {isOwner && (
+            <button onClick={handleSave} disabled={saving} className="btn-primary px-6 py-2.5 inline-flex items-center gap-2">
+              {saving ? 'Saving…' : <>{IconSave} Save Proposal</>}
+            </button>
+          )}
         </div>
 
         {/* ─── V2: Shareable Link ──────────────────────────────────────── */}
+        {isOwner && (
         <div className="card border-indigo-100 bg-indigo-50 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
@@ -523,8 +548,10 @@ export default function ProposalDetailPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* ─── V2: LinkedIn Content ────────────────────────────────────── */}
+        {isOwner && (
         <div className="card border-blue-100 bg-blue-50 space-y-3">
           <div>
             <p className="text-sm font-semibold text-blue-900">LinkedIn Content</p>
@@ -561,6 +588,7 @@ export default function ProposalDetailPage() {
             </div>
           )}
         </div>
+        )}
 
       </div>
     </main>

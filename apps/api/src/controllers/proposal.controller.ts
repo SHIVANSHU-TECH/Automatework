@@ -5,11 +5,27 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Proposal } from '@domain';
 
 export const proposalRouter = Router();
-proposalRouter.use(requireAuth);
 
 // Helper — Express 5 types req.params values as string | string[]
 const paramId = (id: string | string[]): string =>
   Array.isArray(id) ? id[0] : id;
+
+// ─── Public shared-proposal endpoint (no auth required) ───────────────────────
+// When a share link is generated the proposal is mirrored to shared_proposals/{id}.
+// This endpoint lets any viewer read that snapshot without being the owner.
+proposalRouter.get('/shared/:id', async (req, res) => {
+  try {
+    const id = paramId(req.params.id);
+    const proposal = await dbGet<Proposal>(`shared_proposals/${id}`);
+    if (!proposal) return res.status(404).json({ message: 'Proposal not found' });
+    res.json({ proposal });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message || 'Unable to load proposal' });
+  }
+});
+
+// All routes below require authentication
+proposalRouter.use(requireAuth);
 
 proposalRouter.get('/', async (req: AuthRequest, res) => {
   try {
@@ -76,6 +92,10 @@ proposalRouter.put('/:id', async (req: AuthRequest, res) => {
       updatedAt:   new Date().toISOString(),
     };
     await dbSet(paths.proposal(req.userId!, id), updated);
+    // Keep shared_proposals in sync if this proposal has been shared
+    dbGet<Proposal>(`shared_proposals/${id}`).then((existing) => {
+      if (existing) dbSet(`shared_proposals/${id}`, updated).catch(() => {});
+    }).catch(() => {});
     res.json({ proposal: updated });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message || 'Unable to update proposal' });
